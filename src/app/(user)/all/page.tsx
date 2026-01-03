@@ -20,7 +20,6 @@ function ProjectListContent() {
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
-  // ✅ 검색 관련 상태 (엔터 전용)
   const [searchTerm, setSearchTerm] = useState("");
   const [activeSearch, setActiveSearch] = useState(""); 
   
@@ -28,7 +27,20 @@ function ProjectListContent() {
   const categoryParam = searchParams.get("category") || "all";
   const observerTarget = useRef<HTMLDivElement>(null);
 
-  // 1. 통합 데이터 fetch 함수
+  // ✅ HTML 태그와 &nbsp; 등을 제거하는 텍스트 정제 함수
+  const cleanDescription = (html: string) => {
+    if (!html) return "";
+    return html
+      .replace(/<[^>]*>?/gm, "") // 모든 HTML 태그 제거
+      .replace(/&nbsp;/g, " ")   // &nbsp;를 일반 공백으로 치환
+      .replace(/&amp;/g, "&")    // &amp; 등을 일반 문자로 치환
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/\s+/g, " ")      // 연속된 공백을 하나로 합침
+      .trim();                   // 앞뒤 공백 제거
+  };
+
   const fetchProjects = useCallback(async (isReset = false) => {
     if (loading && !isReset) return;
     
@@ -42,7 +54,6 @@ function ProjectListContent() {
       const data = await response.json();
       
       if (isReset) {
-        // ✅ [중요] 데이터를 다 받은 뒤에 교체하므로 깜박이지 않음
         setProjects(data);
         setPage(2);
       } else {
@@ -57,19 +68,16 @@ function ProjectListContent() {
     }
   }, [page, activeSearch, categoryParam, loading]);
 
-  // 2. 카테고리나 "확정된 검색어"가 바뀔 때만 호출 (화면 비우지 않음)
   useEffect(() => {
     fetchProjects(true);
   }, [categoryParam, activeSearch]);
 
-  // 3. 엔터키 핸들러
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      setActiveSearch(searchTerm); // 엔터를 눌러야 실제 검색어 상태가 변경됨
+      setActiveSearch(searchTerm);
     }
   };
 
-  // 4. 무한 스크롤
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -90,7 +98,6 @@ function ProjectListContent() {
           {categoryParam === "all" ? "Archive" : categoryParam}
         </h1>
 
-        {/* ✅ 검색창 사이즈 복구 및 엔터 적용 */}
         <div className="relative w-full md:w-80">
           <input
             type="text"
@@ -110,7 +117,6 @@ function ProjectListContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* 리스트 렌더링 */}
         {projects.map((project, index) => (
           <Link href={`/projects/${project.id}`} key={`${project.id}-${index}`} className="group block border border-slate-100 rounded-3xl overflow-hidden bg-white hover:shadow-lg transition-shadow">
             <div className="relative aspect-video bg-slate-50 overflow-hidden">
@@ -119,12 +125,14 @@ function ProjectListContent() {
             <div className="p-6">
               <span className="text-[10px] font-bold bg-black text-white px-2 py-0.5 rounded-full uppercase">{project.categoryName || "Mixed"}</span>
               <h2 className="text-xl font-bold mt-3 mb-2 uppercase line-clamp-1">{project.title}</h2>
-              <p className="text-slate-500 text-sm line-clamp-2 opacity-80">{project.description?.replace(/<[^>]*>?/gm, "")}</p>
+              {/* ✅ 수정한 부분: cleanDescription 함수 적용 */}
+              <p className="text-slate-500 text-sm line-clamp-2 opacity-80 leading-relaxed">
+                {cleanDescription(project.description)}
+              </p>
             </div>
           </Link>
         ))}
 
-        {/* ✅ 추가 로딩 스켈레톤 (하단에만 작게 붙음) */}
         {hasMore && (loading || projects.length === 0) && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 rounded-3xl overflow-hidden bg-white shadow-sm opacity-40">
             <Skeleton className="aspect-video w-full rounded-none" />
