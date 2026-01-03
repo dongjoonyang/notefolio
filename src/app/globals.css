@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+html, body {
+  box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+/* --- 1. 공통 컨텐츠 스타일 (prose-custom) --- */
+.prose-custom {
+  line-height: 1.8;
+  color: #374151;
+}
+
+.prose-custom h2, .prose-custom h3 { scroll-margin-top: 100px; }
+.prose-custom h1 { font-size: 2.5rem; font-weight: 900; margin-top: 3rem; margin-bottom: 1.5rem; color: #111827; }
+.prose-custom h2 { font-size: 1.875rem; font-weight: 800; margin-top: 4rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f3f4f6; color: #1f2937; }
+.prose-custom h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #1f2937; }
+.prose-custom p { margin-bottom: 1.5rem; }
+.prose-custom ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+
+/* --- 2. 에디터 및 유저 페이지 공통 이미지 설정 --- */
+/* (에디터 .ql-editor 와 유저페이지 .content-view 모두 적용) */
+.ql-editor img, 
+.content-view img {
+  display: inline-block !important; /* Tailwind의 block 설정을 무력화 */
+  max-width: 100%;
+  height: auto;
+  vertical-align: bottom;
+  border-radius: 1rem; /* 디자인에 맞춰 조절 가능 */
+}
+
+/* 왼쪽 정렬 (Float Left) */
+.ql-editor img[style*="float: left"],
+.content-view img[style*="float: left"] {
+  float: left !important;
+  margin-right: 20px !important;
+  margin-bottom: 10px !important;
+}
+
+/* 오른쪽 정렬 (Float Right) */
+.ql-editor img[style*="float: right"],
+.content-view img[style*="float: right"] {
+  float: right !important;
+  margin-left: 20px !important;
+  margin-bottom: 10px !important;
+}
+
+/* 중앙 정렬 (Quill 기본값 대응) */
+.ql-editor img[style*="display: block; margin: auto;"],
+.content-view img[style*="display: block; margin: auto;"] {
+  display: block !important;
+  float: none !important;
+  margin: 2rem auto !important;
+}
+
+/* --- 3. 부모 컨테이너 레이아웃 수정 --- */
+.content-view {
+  display: block !important; /* flex 영향을 차단하여 float가 정상 작동하게 함 */
+  width: 100%;
+}
+
+/* 문단(p)이 float된 이미지를 감싸지 못하고 튕겨나가는 현상 방지 */
+.ql-editor p,
+.content-view p {
+  display: block; 
+  overflow: visible;
+}
+
+/* 이미지가 포함된 문단에서 높이가 0이 되는 현상 방지 */
+.ql-editor p:has(img),
+.content-view p:has(img) {
+  display: flow-root !important;
+}
+
+/* 하단 요소들이 float 이미지 옆으로 딸려 올라오는 것 방지 */
+.ql-editor::after,
+.content-view::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+/* 본문의 문단(p) 태그 설정 수정 */
+.content-view p {
+  display: block;
+  overflow: visible;
+  /* ✨ 이 코드가 핵심입니다: 연속된 공백과 줄바꿈을 그대로 표시함 */
+  white-space: pre-wrap; 
+}
+
+/* 사용자가 이미지를 클릭할 수 있다는 걸 알 수 있게 */
+.content-view img {
+  cursor: zoom-in; /* 돋보기 모양 커서 */
+  transition: transform 0.2s ease;
+}
+
+.content-view img:hover {
+  transform: scale(1.01); /* 마우스 올리면 아주 살짝 커짐 */
+}
