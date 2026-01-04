@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 // src/app/page.tsx
 import Link from "next/link";
 import { recordVisit } from "@/lib/visitor"; // 👈 방문 기록 함수 불러오기

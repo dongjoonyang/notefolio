@@ -1,7 +1,7 @@
+export const dynamic = 'force-dynamic'; 
+
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
-
-export const dynamic = 'force-dynamic'; 
 
 // --- 1. 저장(POST) 기능 ---
 export async function POST(request: Request) {
