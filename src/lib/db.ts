@@ -1,21 +1,18 @@
 import mysql from 'mysql2/promise';
 
-// DB 연결 풀 생성
 export const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  // Aiven은 보통 3306이 아닌 다른 포트를 줄 때가 많으므로 반드시 환경변수 처리를 해줍니다.
-  port: Number(process.env.DB_PORT) || 3306, 
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  
-  // ✅ Aiven 배포를 위한 핵심 설정
+  // 👈 스크린샷에 적으신 이름과 똑같이 'DATABASE_'를 붙여야 합니다.
+  host: process.env.DATABASE_HOST, 
+  port: Number(process.env.DATABASE_PORT) || 25756, // Aiven 포트에 맞춰 수정
+  user: process.env.DATABASE_USER,
+  password: process.env.DATABASE_PASSWORD,
+  database: process.env.DATABASE_NAME,
   ssl: {
-    rejectUnauthorized: false, // 별도의 인증서 파일 없이 연결하기 위한 옵션
+    rejectUnauthorized: false,
   },
   
   waitForConnections: true,
-  connectionLimit: 5, // 무료 티어이므로 연결 수를 약간 줄이는 것이 안정적입니다.
+  connectionLimit: 5,
   queueLimit: 0,
-  enableKeepAlive: true, // 연결 유지 성능 향상
+  enableKeepAlive: true,
 });
