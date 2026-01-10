@@ -1,22 +1,20 @@
 'use client';
 
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Save, Image as ImageIcon, X } from "lucide-react";
+import { Save, Image as ImageIcon, X, Loader2, ArrowLeft } from "lucide-react";
 import 'react-quill-new/dist/quill.snow.css';
-import BackButton from "@/components/BackButton";
 import Image from "next/image";
+import type ReactQuill from "react-quill-new";
 
-// ✨ 1. 리사이즈 및 정렬 모듈 설정 (타입 에러 완전 해결)
-// 마지막에 'as any'를 붙여 컴포넌트 사용 시 Props 검사를 끕니다.
-const ReactQuill = dynamic(
+// 1. 에디터 로드 설정 (정렬 및 리사이즈 포함)
+const ReactQuillEditor = dynamic(
   async () => {
     const { default: RQ }: any = await import("react-quill-new");
     const { default: ImageResize } = await import("quill-image-resize-module-react");
     const Quill = RQ.Quill as any;
 
-    // 이미지 정렬 스타일 등록
     const AlignStyle = Quill.import('attributors/style/align');
     Quill.register(AlignStyle, true);
 
@@ -27,8 +25,7 @@ const ReactQuill = dynamic(
     if (!Quill.imports["modules/imageResize"]) {
       Quill.register("modules/imageResize", ImageResize);
     }
-    // 내부 반환값도 any로 처리
-    return RQ as any;
+    return RQ;
   },
   { 
     ssr: false,
@@ -39,6 +36,9 @@ const ReactQuill = dynamic(
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
+  
+  // Ref 설정
+  const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState('');
@@ -48,22 +48,67 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false); // 업로드 상태 추가
 
-  // ✨ 2. 에디터 모듈 설정
-  const editorModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ 'align': [] }], 
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link", "image", "code-block"],
-      ["clean"],
-    ],
+  // 2. 에디터 전용 이미지 핸들러 (Vercel Blob 업로드)
+  const imageHandler = useMemo(() => {
+    return () => {
+      const input = document.createElement("input");
+      input.setAttribute("type", "file");
+      input.setAttribute("accept", "image/*");
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        try {
+          setIsUploading(true);
+          const response = await fetch(`/api/upload?filename=${file.name}`, {
+            method: 'POST',
+            body: file,
+          });
+
+          if (!response.ok) throw new Error("업로드 실패");
+          const newBlob = await response.json();
+
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", newBlob.url);
+            editor.setSelection(range.index + 1);
+          }
+        } catch (error) {
+          console.error("Editor Upload Error:", error);
+          alert("이미지 업로드에 실패했습니다.");
+        } finally {
+          setIsUploading(false);
+        }
+      };
+    };
+  }, []);
+
+  // 3. 에디터 모듈 설정 (handlers 추가)
+  const editorModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ 'align': [] }], 
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
     imageResize: {
       modules: ["Resize", "DisplaySize"],
     },
-  };
+  }), [imageHandler]);
 
+  // 데이터 로딩
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,7 +126,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         
         if (projData) {
           setTitle(projData.title || "");
-          // content 필드가 없을 경우를 대비해 description도 확인
           setContent(projData.content || projData.description || ""); 
           setCategory(projData.categoryName || "");
           setThumbnail(projData.thumbnail || "");
@@ -96,22 +140,36 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     if (id) fetchData();
   }, [id]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 4. 썸네일 이미지 업로드 (Vercel Blob 적용)
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("2MB 이하의 이미지를 사용해주세요.");
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => setThumbnail(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const response = await fetch(`/api/upload?filename=${file.name}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) throw new Error("업로드 실패");
+      const newBlob = await response.json();
+      setThumbnail(newBlob.url); // 결과 URL을 썸네일로 설정
+    } catch (error) {
+      console.error("Thumbnail Upload Error:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
   const handleUpdate = async () => {
     if (!title.trim() || !category) {
       alert("제목과 카테고리를 확인해주세요.");
+      return;
+    }
+    if (isUploading) {
+      alert("이미지가 아직 업로드 중입니다.");
       return;
     }
 
@@ -150,21 +208,22 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
-          <BackButton />
+          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <ArrowLeft size={24} />
+          </button>
           <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tighter">Edit Project</h1>
         </div>
         <button 
           onClick={handleUpdate}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploading}
           className="bg-black text-white px-6 py-2.5 rounded-xl flex items-center gap-2 hover:bg-zinc-800 transition-all font-bold disabled:bg-slate-400 shadow-sm uppercase text-sm"
         >
-          <Save size={18} />
+          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
           {isSubmitting ? "Saving..." : "Update"}
         </button>
       </div>
 
       <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-        {/* 제목 입력부 */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Title</label>
           <input
@@ -177,7 +236,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* 카테고리 선택 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
             <select 
@@ -192,24 +250,24 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             </select>
           </div>
 
-          {/* 썸네일 관리 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Thumbnail</label>
             <div className="flex items-center gap-4">
               <button 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 rounded-xl text-xs font-black transition-colors text-slate-600 border border-slate-200 uppercase"
+                disabled={isUploading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black transition-colors text-slate-600 border border-slate-200 uppercase"
               >
-                <ImageIcon size={16} />
-                Change Image
+                {isUploading ? <Loader2 className="animate-spin" size={16} /> : <ImageIcon size={16} />}
+                {isUploading ? "Uploading..." : "Change Image"}
               </button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
               {thumbnail && (
                 <div className="relative w-16 h-10 rounded-lg overflow-hidden border border-slate-200 group shadow-sm">
                   <Image src={thumbnail} alt="Preview" fill className="object-cover" />
                   <button 
-                    type="button" // form 전송 방지
+                    type="button"
                     onClick={() => setThumbnail("")}
                     className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
@@ -221,11 +279,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* 에디터 본문 */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Content</label>
           <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-inner">
-            <ReactQuill
+            <ReactQuillEditor
+              ref={quillRef}
               theme="snow"
               value={content}
               onChange={setContent}
