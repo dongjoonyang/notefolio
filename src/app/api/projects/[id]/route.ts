@@ -10,7 +10,7 @@ export async function DELETE(
     const { id } = await params;
     const token = process.env.BLOB_READ_WRITE_TOKEN;
 
-    // 1. DB에서 데이터 조회 (HTML 태그 포함된 상태)
+    // 1. DB에서 삭제할 프로젝트의 이미지 주소들을 먼저 조회합니다.
     const [rows]: any = await pool.query(
       "SELECT thumbnail, description FROM Project WHERE id = ?",
       [id]
@@ -18,16 +18,16 @@ export async function DELETE(
 
     if (rows && rows.length > 0) {
       const project = rows[0];
-      const urlsToDelete = new Set<string>();
+      const urlsToDelete = new Set<string>(); // 중복 주소 방지
 
-      // 썸네일 URL 추출
+      // 썸네일 주소 추가
       if (project.thumbnail && project.thumbnail.includes("public.blob.vercel-storage.com")) {
         urlsToDelete.add(project.thumbnail);
       }
 
-      // 본문(HTML 태그) 내 URL 정밀 추출
+      // 본문(description) HTML 태그 내에서 실제 이미지 주소만 추출
       if (project.description) {
-        // 따옴표(")나 공백 전까지만 주소로 인식하도록 정규식 강화
+        // 따옴표(")나 태그 기호(>) 전까지만 주소로 인식하는 정규식
         const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
         const matches = project.description.match(urlRegex);
         if (matches) {
@@ -35,21 +35,25 @@ export async function DELETE(
         }
       }
 
-      // Vercel Storage에서 실제 파일 삭제
-      const deletePromises = Array.from(urlsToDelete).map(url => {
-        console.log("🔥 삭제 시도 URL:", url);
-        return del(url, { token }).catch(err => console.error("파일 삭제 실패:", url, err));
+      // 2. Vercel Storage에서 파일들을 삭제합니다.
+      const deletePromises = Array.from(urlsToDelete).map((url) => {
+        console.log("🗑️ 삭제 시도:", url);
+        return del(url, { token }).catch((err) => 
+          console.error("❌ 파일 삭제 실패(이미 지워졌거나 주소 틀림):", url, err)
+        );
       });
 
       await Promise.all(deletePromises);
     }
 
-    // 2. 파일 삭제 후 DB 레코드 삭제
+    // 3. 파일 삭제 시도 후 최종적으로 DB에서 데이터를 지웁니다.
     await pool.query("DELETE FROM Project WHERE id = ?", [id]);
     
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "성공적으로 삭제되었습니다." });
   } catch (error: any) {
-    console.error("전체 에러:", error);
+    console.error("🚨 서버 에러:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// PUT (수정) 함수도 필요하시다면 여기에 이어서 작성하시면 됩니다.
