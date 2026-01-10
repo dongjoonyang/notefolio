@@ -1,30 +1,29 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { ArrowLeft, Save, Image as ImageIcon, X } from "lucide-react"; 
+import { useState, useEffect, useRef, useMemo } from "react";
+import { ArrowLeft, Save, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import type ReactQuill from "react-quill-new"; // 타입만 임포트
 
-const ReactQuill = dynamic(
+// 에디터 로드 설정
+const ReactQuillEditor = dynamic(
   async () => {
     const { default: RQ } = await import("react-quill-new");
     // @ts-ignore
     const { default: ImageResize } = await import("quill-image-resize-module-react");
     const Quill = RQ.Quill as any;
 
-    // ✨ 중요: 리사이즈 모듈은 글로벌 Quill 객체를 참조합니다.
     if (typeof window !== "undefined") {
       (window as any).Quill = Quill;
     }
 
-    // 모듈 중복 등록 방지 및 등록
     if (!Quill.imports["modules/imageResize"]) {
       Quill.register("modules/imageResize", ImageResize);
     }
 
-    // 이미지에 float(정렬) 스타일을 직접 허용하는 설정
     const AlignStyle = Quill.import('attributors/style/align');
     Quill.register(AlignStyle, true);
 
@@ -34,12 +33,15 @@ const ReactQuill = dynamic(
     ssr: false,
     loading: () => <div className="h-80 bg-gray-50 animate-pulse rounded-xl border border-gray-200" />,
   }
-);
+) as any; // ref 전달을 위해 임시로 any 캐스팅
 
 import "react-quill-new/dist/quill.snow.css";
 
 export default function NewProjectPage() {
   const router = useRouter();
+  
+  // ✅ 1. 명확한 ReactQuill 타입 지정 (빨간줄 해결 핵심)
+  const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [title, setTitle] = useState("");
@@ -48,21 +50,66 @@ export default function NewProjectPage() {
   const [thumbnail, setThumbnail] = useState(""); 
   const [categories, setCategories] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const editorModules = {
-    toolbar: [
-      [{ header: [1, 2, 3, false] }],
-      ["bold", "italic", "underline", "strike"],
-      [{ 'align': [] }], 
-      [{ list: "ordered" }, { list: "bullet" }],
-      ["link", "image"],
-      ["clean"],
-    ],
-    // ✨ 리사이즈 설정 (Toolbar 제외하여 에러 방지)
+  // ✅ 2. 에디터 이미지 핸들러
+  const imageHandler = useMemo(() => {
+    return () => {
+      const input = document.createElement("input");
+      input.setAttribute("type", "file");
+      input.setAttribute("accept", "image/*");
+      input.click();
+
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+
+        try {
+          setIsUploading(true);
+          const response = await fetch(`/api/upload?filename=${file.name}`, {
+            method: 'POST',
+            body: file,
+          });
+
+          if (!response.ok) throw new Error("업로드 실패");
+          const newBlob = await response.json();
+
+          // ✅ ref를 통해 에디터 인스턴스에 접근
+          const editor = quillRef.current?.getEditor();
+          if (editor) {
+            const range = editor.getSelection(true);
+            editor.insertEmbed(range.index, "image", newBlob.url);
+            editor.setSelection(range.index + 1);
+          }
+        } catch (error) {
+          console.error("Editor Upload Error:", error);
+          alert("이미지 업로드에 실패했습니다.");
+        } finally {
+          setIsUploading(false);
+        }
+      };
+    };
+  }, []);
+
+  // ✅ 3. 에디터 모듈 설정
+  const editorModules = useMemo(() => ({
+    toolbar: {
+      container: [
+        [{ header: [1, 2, 3, false] }],
+        ["bold", "italic", "underline", "strike"],
+        [{ 'align': [] }], 
+        [{ list: "ordered" }, { list: "bullet" }],
+        ["link", "image"],
+        ["clean"],
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
     imageResize: {
       modules: ["Resize", "DisplaySize"],
     },
-  };
+  }), [imageHandler]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -78,12 +125,26 @@ export default function NewProjectPage() {
     fetchCategories();
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ✅ 4. 썸네일 업로드 핸들러
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setThumbnail(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const response = await fetch(`/api/upload?filename=${file.name}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) throw new Error("업로드 실패");
+      const newBlob = await response.json();
+      setThumbnail(newBlob.url); 
+    } catch (error) {
+      console.error("Thumbnail Upload Error:", error);
+      alert("썸네일 이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -92,6 +153,11 @@ export default function NewProjectPage() {
       alert("모든 필드를 입력해주세요.");
       return;
     }
+    if (isUploading) {
+      alert("이미지가 업로드 중입니다. 잠시만 기다려주세요.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/projects", {
@@ -113,6 +179,7 @@ export default function NewProjectPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
+      {/* 상단 헤더 영역 */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <Link href="/admin/projects" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -122,15 +189,16 @@ export default function NewProjectPage() {
         </div>
         <button 
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isUploading}
           className="bg-black text-white px-6 py-2.5 rounded-xl flex items-center gap-2 hover:bg-zinc-800 transition-all disabled:bg-zinc-400 font-medium"
         >
-          <Save size={18} />
+          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
           {isSubmitting ? "저장 중..." : "저장하기"}
         </button>
       </div>
 
       <div className="space-y-8 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
+        {/* 제목 입력 */}
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">프로젝트 제목</label>
           <input
@@ -142,6 +210,7 @@ export default function NewProjectPage() {
           />
         </div>
 
+        {/* 카테고리 & 썸네일 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-semibold text-slate-600 mb-2">카테고리</label>
@@ -162,9 +231,14 @@ export default function NewProjectPage() {
               <button 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-medium transition-colors text-slate-600 border border-slate-200"
+                disabled={isUploading}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors border ${
+                  isUploading 
+                    ? "bg-slate-50 text-slate-400 border-slate-100" 
+                    : "bg-slate-100 hover:bg-slate-200 text-slate-600 border-slate-200"
+                }`}
               >
-                <ImageIcon size={16} />
+                {isUploading ? <Loader2 className="animate-spin" size={16} /> : <ImageIcon size={16} />}
                 이미지 업로드
               </button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
@@ -180,10 +254,12 @@ export default function NewProjectPage() {
           </div>
         </div>
 
+        {/* 에디터 영역 */}
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">상세 설명</label>
           <div className="rounded-xl overflow-hidden border border-slate-200 min-h-[400px]">
-            <ReactQuill
+            <ReactQuillEditor
+              ref={quillRef}
               theme="snow"
               value={content}
               onChange={setContent}
