@@ -8,52 +8,52 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    // 토큰이 설정되어 있는지 확인
     const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (!token) {
+      console.error("❌ 에러: BLOB_READ_WRITE_TOKEN이 환경변수에 없습니다.");
+    }
 
-    // 1. DB에서 삭제할 프로젝트의 이미지 주소들을 먼저 조회합니다.
+    // 1. DB에서 주소부터 확실히 가져오기
     const [rows]: any = await pool.query(
       "SELECT thumbnail, description FROM Project WHERE id = ?",
       [id]
     );
 
-    if (rows && rows.length > 0) {
-      const project = rows[0];
-      const urlsToDelete = new Set<string>(); // 중복 주소 방지
-
-      // 썸네일 주소 추가
-      if (project.thumbnail && project.thumbnail.includes("public.blob.vercel-storage.com")) {
-        urlsToDelete.add(project.thumbnail);
-      }
-
-      // 본문(description) HTML 태그 내에서 실제 이미지 주소만 추출
-      if (project.description) {
-        // 따옴표(")나 태그 기호(>) 전까지만 주소로 인식하는 정규식
-        const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
-        const matches = project.description.match(urlRegex);
-        if (matches) {
-          matches.forEach((url: string) => urlsToDelete.add(url));
-        }
-      }
-
-      // 2. Vercel Storage에서 파일들을 삭제합니다.
-      const deletePromises = Array.from(urlsToDelete).map((url) => {
-        console.log("🗑️ 삭제 시도:", url);
-        return del(url, { token }).catch((err) => 
-          console.error("❌ 파일 삭제 실패(이미 지워졌거나 주소 틀림):", url, err)
-        );
-      });
-
-      await Promise.all(deletePromises);
+    if (!rows || rows.length === 0) {
+      return NextResponse.json({ error: "프로젝트를 찾을 수 없습니다." }, { status: 404 });
     }
 
-    // 3. 파일 삭제 시도 후 최종적으로 DB에서 데이터를 지웁니다.
+    const project = rows[0];
+    const urlsToDelete: string[] = [];
+
+    // 썸네일 추가
+    if (project.thumbnail) urlsToDelete.push(project.thumbnail);
+
+    // 본문 내 이미지들 추출
+    const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
+    const matches = project.description?.match(urlRegex) || [];
+    matches.forEach((url: string) => urlsToDelete.push(url));
+
+    console.log("📍 삭제를 시도할 최종 주소 목록:", urlsToDelete);
+
+    // 2. Vercel Storage에서 파일 삭제 (순차적으로 실행)
+    for (const url of urlsToDelete) {
+      try {
+        await del(url, { token });
+        console.log("✅ 스토리지 삭제 성공:", url);
+      } catch (err: any) {
+        console.error("❌ 스토리지 삭제 실패:", url, err.message);
+      }
+    }
+
+    // 3. 파일 삭제 시도 후에만 DB 삭제를 수행합니다.
     await pool.query("DELETE FROM Project WHERE id = ?", [id]);
-    
-    return NextResponse.json({ success: true, message: "성공적으로 삭제되었습니다." });
+    console.log("🗑️ DB 레코드 삭제 완료 (ID:", id, ")");
+
+    return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error("🚨 서버 에러:", error);
+    console.error("🚨 서버 전체 에러:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
-
-// PUT (수정) 함수도 필요하시다면 여기에 이어서 작성하시면 됩니다.
