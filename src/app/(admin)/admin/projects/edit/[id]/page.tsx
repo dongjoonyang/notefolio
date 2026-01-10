@@ -36,6 +36,9 @@ const ReactQuillEditor = dynamic(
   }
 ) as any; 
 
+// ✅ 상수 정의: 4MB 제한 (바이트 단위)
+const MAX_FILE_SIZE = 4 * 1024 * 1024; 
+
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
@@ -45,14 +48,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(''); 
-  const [category, setCategory] = useState(''); // 이름 혹은 ID
+  const [category, setCategory] = useState(''); 
   const [thumbnail, setThumbnail] = useState(""); 
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 에디터 이미지 핸들러
+  // 1️⃣ 에디터 이미지 핸들러 (용량 체크 추가)
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -63,6 +66,12 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       input.onchange = async () => {
         const file = input.files?.[0];
         if (!file) return;
+
+        // 🚨 [추가] 용량 체크
+        if (file.size > MAX_FILE_SIZE) {
+          alert("이미지 용량이 너무 큽니다. 4MB 이하의 파일만 업로드 가능합니다.");
+          return;
+        }
 
         try {
           setIsUploading(true);
@@ -109,7 +118,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     },
   }), [imageHandler]);
 
-  // 데이터 초기 로딩
+  // 데이터 초기 로딩 로직 (기존과 동일)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -117,26 +126,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           fetch('/api/categories'),
           fetch(`/api/projects/detail?id=${id}`)
         ]);
-
         if (!catRes.ok || !projRes.ok) throw new Error("데이터 로딩 실패");
-
         const catData = await catRes.json();
         const projData = await projRes.json();
-
         setCategories(catData);
-        
         if (projData) {
           setTitle(projData.title || "");
-          setContent(projData.description || ""); // content -> description 필드명 일치
-          // 카테고리 설정 (ID로 관리되는지 이름으로 관리되는지 확인 필요)
-          // 여기서는 stat.id 값을 categoryId로 넘기는 서버 액션에 맞게 id를 찾아 설정합니다.
+          setContent(projData.description || ""); 
           const currentCat = catData.find((c: any) => c.name === projData.categoryName);
           setCategory(currentCat ? String(currentCat.id) : "");
           setThumbnail(projData.thumbnail || "");
         }
       } catch (err) {
         console.error("Fetch Error:", err);
-        alert("데이터를 가져오는 중 오류가 발생했습니다.");
       } finally {
         setIsLoading(false);
       }
@@ -144,9 +146,17 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     if (id) fetchData();
   }, [id]);
 
+  // 2️⃣ 썸네일 이미지 핸들러 (용량 체크 추가)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 🚨 [추가] 용량 체크
+    if (file.size > MAX_FILE_SIZE) {
+      alert("썸네일 용량이 너무 큽니다. 4MB 이하의 이미지만 업로드 가능합니다.");
+      e.target.value = ""; // 선택 비우기
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -166,7 +176,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  // ✅ 핵심 수정: 서버 액션 호출 방식
+  // 업데이트 실행 로직 (기존과 동일)
   const handleUpdate = async () => {
     if (!title.trim() || !category) {
       alert("제목과 카테고리를 확인해주세요.");
@@ -179,26 +189,20 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
     setIsSubmitting(true);
     try {
-      // 1. FormData 객체 생성 (서버 액션 포맷에 맞춤)
       const formData = new FormData();
       formData.append("title", title);
       formData.append("description", content);
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
 
-      // 2. 서버 액션 실행
-      // actions.ts에서 redirect를 수행하므로 성공 시 페이지가 이동됩니다.
       await updateProject(Number(id), formData);
       
-      // 혹시라도 redirect가 작동하지 않을 경우를 대비한 수동 이동
       alert('수정되었습니다!');
       router.push('/admin/projects');
       router.refresh();
 
     } catch (err: any) {
-      // Next.js redirect 과정에서 발생하는 에러는 정상적인 흐름입니다.
       if (err.message?.includes('NEXT_REDIRECT')) return;
-      
       console.error(err);
       alert("수정 중 오류가 발생했습니다.");
     } finally {
@@ -210,6 +214,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
+      {/* UI 렌더링 부분 (기존과 동일) */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -228,6 +233,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+        {/* 제목 입력 */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Title</label>
           <input
@@ -240,6 +246,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* 카테고리 선택 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
             <select 
@@ -254,6 +261,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             </select>
           </div>
 
+          {/* 썸네일 업로드 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Thumbnail</label>
             <div className="flex items-center gap-4">
@@ -283,6 +291,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
+        {/* 에디터 */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Content</label>
           <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-inner">

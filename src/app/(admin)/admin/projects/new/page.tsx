@@ -6,7 +6,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type ReactQuill from "react-quill-new"; // 타입만 임포트
+import type ReactQuill from "react-quill-new";
 
 // 에디터 로드 설정
 const ReactQuillEditor = dynamic(
@@ -33,14 +33,16 @@ const ReactQuillEditor = dynamic(
     ssr: false,
     loading: () => <div className="h-80 bg-gray-50 animate-pulse rounded-xl border border-gray-200" />,
   }
-) as any; // ref 전달을 위해 임시로 any 캐스팅
+) as any;
 
 import "react-quill-new/dist/quill.snow.css";
+
+// ✅ 상수 정의: 4MB 제한
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 export default function NewProjectPage() {
   const router = useRouter();
   
-  // ✅ 1. 명확한 ReactQuill 타입 지정 (빨간줄 해결 핵심)
   const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -52,7 +54,7 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // ✅ 2. 에디터 이미지 핸들러
+  // ✅ 에디터 이미지 핸들러 (용량 체크 추가)
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -64,6 +66,12 @@ export default function NewProjectPage() {
         const file = input.files?.[0];
         if (!file) return;
 
+        // 🚨 [추가] 4MB 용량 체크
+        if (file.size > MAX_FILE_SIZE) {
+          alert("이미지 용량이 너무 큽니다. 4MB 이하의 파일만 업로드 가능합니다.");
+          return;
+        }
+
         try {
           setIsUploading(true);
           const response = await fetch(`/api/upload?filename=${file.name}`, {
@@ -74,7 +82,6 @@ export default function NewProjectPage() {
           if (!response.ok) throw new Error("업로드 실패");
           const newBlob = await response.json();
 
-          // ✅ ref를 통해 에디터 인스턴스에 접근
           const editor = quillRef.current?.getEditor();
           if (editor) {
             const range = editor.getSelection(true);
@@ -91,7 +98,6 @@ export default function NewProjectPage() {
     };
   }, []);
 
-  // ✅ 3. 에디터 모듈 설정
   const editorModules = useMemo(() => ({
     toolbar: {
       container: [
@@ -125,10 +131,17 @@ export default function NewProjectPage() {
     fetchCategories();
   }, []);
 
-  // ✅ 4. 썸네일 업로드 핸들러
+  // ✅ 썸네일 업로드 핸들러 (용량 체크 추가)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // 🚨 [추가] 4MB 용량 체크
+    if (file.size > MAX_FILE_SIZE) {
+      alert("썸네일 용량이 너무 큽니다. 4MB 이하의 이미지만 업로드 가능합니다.");
+      e.target.value = ""; // 선택 초기화
+      return;
+    }
 
     try {
       setIsUploading(true);
@@ -179,7 +192,6 @@ export default function NewProjectPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
-      {/* 상단 헤더 영역 */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <Link href="/admin/projects" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -198,7 +210,6 @@ export default function NewProjectPage() {
       </div>
 
       <div className="space-y-8 bg-white p-8 rounded-2xl border border-slate-100 shadow-sm">
-        {/* 제목 입력 */}
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">프로젝트 제목</label>
           <input
@@ -210,7 +221,6 @@ export default function NewProjectPage() {
           />
         </div>
 
-        {/* 카테고리 & 썸네일 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-semibold text-slate-600 mb-2">카테고리</label>
@@ -254,7 +264,6 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        {/* 에디터 영역 */}
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">상세 설명</label>
           <div className="rounded-xl overflow-hidden border border-slate-200 min-h-[400px]">
