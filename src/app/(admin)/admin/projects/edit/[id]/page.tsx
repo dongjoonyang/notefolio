@@ -8,7 +8,10 @@ import 'react-quill-new/dist/quill.snow.css';
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
 
-// 1. 에디터 로드 설정 (정렬 및 리사이즈 포함)
+// ✅ 서버 액션 임포트
+import { updateProject } from "@/lib/actions";
+
+// 에디터 로드 설정
 const ReactQuillEditor = dynamic(
   async () => {
     const { default: RQ }: any = await import("react-quill-new");
@@ -37,20 +40,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const router = useRouter();
   const { id } = use(params);
   
-  // Ref 설정
   const quillRef = useRef<ReactQuill>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState(''); 
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState(''); // 이름 혹은 ID
   const [thumbnail, setThumbnail] = useState(""); 
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUploading, setIsUploading] = useState(false); // 업로드 상태 추가
+  const [isUploading, setIsUploading] = useState(false);
 
-  // 2. 에디터 전용 이미지 핸들러 (Vercel Blob 업로드)
+  // 에디터 이미지 핸들러
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -88,7 +90,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     };
   }, []);
 
-  // 3. 에디터 모듈 설정 (handlers 추가)
   const editorModules = useMemo(() => ({
     toolbar: {
       container: [
@@ -108,7 +109,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     },
   }), [imageHandler]);
 
-  // 데이터 로딩
+  // 데이터 초기 로딩
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -126,8 +127,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         
         if (projData) {
           setTitle(projData.title || "");
-          setContent(projData.content || projData.description || ""); 
-          setCategory(projData.categoryName || "");
+          setContent(projData.description || ""); // content -> description 필드명 일치
+          // 카테고리 설정 (ID로 관리되는지 이름으로 관리되는지 확인 필요)
+          // 여기서는 stat.id 값을 categoryId로 넘기는 서버 액션에 맞게 id를 찾아 설정합니다.
+          const currentCat = catData.find((c: any) => c.name === projData.categoryName);
+          setCategory(currentCat ? String(currentCat.id) : "");
           setThumbnail(projData.thumbnail || "");
         }
       } catch (err) {
@@ -140,7 +144,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     if (id) fetchData();
   }, [id]);
 
-  // 4. 썸네일 이미지 업로드 (Vercel Blob 적용)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -154,7 +157,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
       if (!response.ok) throw new Error("업로드 실패");
       const newBlob = await response.json();
-      setThumbnail(newBlob.url); // 결과 URL을 썸네일로 설정
+      setThumbnail(newBlob.url);
     } catch (error) {
       console.error("Thumbnail Upload Error:", error);
       alert("이미지 업로드 중 오류가 발생했습니다.");
@@ -163,6 +166,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     }
   };
 
+  // ✅ 핵심 수정: 서버 액션 호출 방식
   const handleUpdate = async () => {
     if (!title.trim() || !category) {
       alert("제목과 카테고리를 확인해주세요.");
@@ -175,28 +179,28 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/projects/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          title, 
-          content, 
-          categoryName: category,
-          thumbnail 
-        }),
-      });
+      // 1. FormData 객체 생성 (서버 액션 포맷에 맞춤)
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", content);
+      formData.append("categoryId", category); 
+      formData.append("thumbnail", thumbnail);
 
-      if (res.ok) {
-        alert('수정되었습니다!');
-        router.push('/admin/projects');
-        router.refresh();
-      } else {
-        const err = await res.json();
-        alert(`수정 실패: ${err.error}`);
-      }
-    } catch (err) {
+      // 2. 서버 액션 실행
+      // actions.ts에서 redirect를 수행하므로 성공 시 페이지가 이동됩니다.
+      await updateProject(Number(id), formData);
+      
+      // 혹시라도 redirect가 작동하지 않을 경우를 대비한 수동 이동
+      alert('수정되었습니다!');
+      router.push('/admin/projects');
+      router.refresh();
+
+    } catch (err: any) {
+      // Next.js redirect 과정에서 발생하는 에러는 정상적인 흐름입니다.
+      if (err.message?.includes('NEXT_REDIRECT')) return;
+      
       console.error(err);
-      alert("네트워크 오류");
+      alert("수정 중 오류가 발생했습니다.");
     } finally {
       setIsSubmitting(false);
     }
@@ -245,7 +249,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             >
               <option value="">SELECT CATEGORY</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                <option key={cat.id} value={cat.id}>{cat.name}</option>
               ))}
             </select>
           </div>
