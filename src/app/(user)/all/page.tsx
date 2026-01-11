@@ -7,6 +7,19 @@ import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
 
+// ✅ 로딩 오버레이 컴포넌트 (파일을 따로 만들기 번거로우시면 여기에 포함해서 쓰셔도 됩니다)
+function LoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-all">
+      <div className="flex flex-col items-center gap-4">
+        {/* 스피너 애니메이션 */}
+        <div className="w-10 h-10 border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin"></div>
+        <p className="text-white dark:text-zinc-100 font-bold tracking-widest uppercase text-[10px]">Loading</p>
+      </div>
+    </div>
+  );
+}
+
 export default function AllPostsPage() {
   return (
     <Suspense fallback={null}>
@@ -92,10 +105,12 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    // ✅ 배경색: bg-white -> dark:bg-zinc-950 대응
     <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+      
+      {/* ✅ 로딩 중일 때 오버레이 표시 */}
+      {loading && <LoadingOverlay />}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-        {/* ✅ 제목: text-gray-900 -> dark:text-zinc-50 대응 */}
         <h1 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
           {categoryParam === "all" ? "Archive" : categoryParam}
         </h1>
@@ -107,7 +122,6 @@ function ProjectListContent() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyDown={handleKeyDown}
-            // ✅ 검색창: border-slate-200, bg-gray-50/50 -> 다크모드 색상 대응
             className="w-full px-5 py-3 pr-10 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-200 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all"
           />
           {searchTerm && (
@@ -124,22 +138,18 @@ function ProjectListContent() {
           <Link 
             href={`/projects/${project.id}`} 
             key={`${project.id}-${index}`} 
-            // ✅ 카드 스타일: border-slate-100, bg-white -> 다크모드 대응
             className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
           >
             <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
               {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
             </div>
             <div className="p-6">
-              {/* ✅ 카테고리 태그: bg-black -> 다크모드에서는 흰색 대비 */}
               <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
                 {project.categoryName || "Mixed"}
               </span>
-              {/* ✅ 제목: dark:text-zinc-100 */}
               <h2 className="text-xl font-bold mt-3 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
                 {project.title}
               </h2>
-              {/* ✅ 본문 요약: text-slate-500 -> dark:text-zinc-400 */}
               <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
                 {cleanDescription(project.description)}
               </p>
@@ -147,7 +157,7 @@ function ProjectListContent() {
           </Link>
         ))}
 
-        {/* ✅ 스켈레톤 UI 다크모드 대응 */}
+        {/* 기존 스켈레톤 UI도 유지 (오버레이와 함께 쓰면 더 자연스럽습니다) */}
         {hasMore && (loading || projects.length === 0) && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
             <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />
@@ -161,7 +171,6 @@ function ProjectListContent() {
       </div>
 
       {!loading && projects.length === 0 && (
-        // ✅ 결과 없음 메시지: border-slate-100 -> dark:border-zinc-800
         <div className="py-24 text-center text-slate-300 dark:text-zinc-700 font-bold uppercase tracking-widest border border-dashed border-slate-100 dark:border-zinc-800 rounded-3xl">
           No Results Found
         </div>

@@ -5,7 +5,14 @@ import ImageModal from '@/components/ImageModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
 
-export default function ContentView({ html }: { html: string }) {
+// ✅ Props 타입에 loadingOverlay를 추가했습니다.
+export default function ContentView({ 
+  html, 
+  loadingOverlay 
+}: { 
+  html: string; 
+  loadingOverlay?: React.ReactNode 
+}) {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -23,10 +30,12 @@ export default function ContentView({ html }: { html: string }) {
 
   return (
     <div className="w-full">
+      {/* ✅ isLoading이 true일 때 부모로부터 받은 로딩 오버레이를 보여줍니다. */}
+      {isLoading && loadingOverlay}
+
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            {/* ✅ 스켈레톤: dark:bg-zinc-800 클래스만 추가했습니다. */}
             <Skeleton className="h-4 w-full dark:bg-zinc-800" />
             <Skeleton className="h-4 w-[90%] dark:bg-zinc-800" />
             <Skeleton className="h-72 w-full rounded-2xl dark:bg-zinc-800" /> 

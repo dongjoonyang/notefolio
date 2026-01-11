@@ -8,6 +8,18 @@ import ProgressBar from "./ProgressBar";
 import TOC from "./TOC";
 import ContentView from "./ContentView";
 
+// ✅ 목록 페이지와 통일된 로딩 오버레이 컴포넌트
+function LoadingOverlay() {
+  return (
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-10 h-10 border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin"></div>
+        <p className="text-white dark:text-zinc-100 font-bold tracking-widest uppercase text-[10px]">Loading</p>
+      </div>
+    </div>
+  );
+}
+
 export default async function ProjectDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   
@@ -61,7 +73,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </header>
 
-      {/* 2. 본문 영역 (ContentView 내부에 스켈레톤 적용) */}
+      {/* 2. 본문 영역 */}
       <div className="max-w-3xl mx-auto px-6 relative flex flex-col items-center content-view">
         <aside className="hidden xl:block absolute left-[calc(100%+60px)] top-16 h-full">
             <div className="sticky top-32 w-52">
@@ -70,17 +82,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </aside>
 
         <div className="w-full py-16">
-          {/* ✅ 여기서 스켈레톤과 본문 내용이 교체됩니다. */}
-          <ContentView html={project.description} />
+          {/* ✅ ContentView 내부의 isLoading 상태와 연동하여 로딩 스피너가 표시됩니다. */}
+          <ContentView html={project.description} loadingOverlay={<LoadingOverlay />} />
           
           <div className="mt-24">
-            {/* TOC가 하단 감지를 위해 찾는 CommentSection 위치 유지 */}
             <CommentSection projectId={id} isAdmin={isAdmin} />
           </div>
         </div>
       </div>
 
-      {/* 3. 하단 내비게이션 (이전/다음 글) */}
+      {/* 3. 하단 내비게이션 */}
       <div className="max-w-3xl mx-auto px-6 mt-32 border-t border-gray-100 dark:border-zinc-800 pt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {newerPost ? (
