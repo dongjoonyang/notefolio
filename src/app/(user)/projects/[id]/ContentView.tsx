@@ -26,9 +26,10 @@ export default function ContentView({ html }: { html: string }) {
       <AnimatePresence mode="wait">
         {isLoading ? (
           <motion.div key="skeleton" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-[90%]" />
-            <Skeleton className="h-72 w-full rounded-2xl" /> 
+            {/* ✅ 스켈레톤: dark:bg-zinc-800 클래스만 추가했습니다. */}
+            <Skeleton className="h-4 w-full dark:bg-zinc-800" />
+            <Skeleton className="h-4 w-[90%] dark:bg-zinc-800" />
+            <Skeleton className="h-72 w-full rounded-2xl dark:bg-zinc-800" /> 
           </motion.div>
         ) : (
           <motion.div

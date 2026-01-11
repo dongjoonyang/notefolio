@@ -266,14 +266,14 @@ export default function NewProjectPage() {
 
         <div>
           <label className="block text-sm font-semibold text-slate-600 mb-2">상세 설명</label>
-          <div className="rounded-xl overflow-hidden border border-slate-200 min-h-[400px]">
+          <div className="rounded-xl overflow-hidden border border-slate-200 min-h-[400px] ">
             <ReactQuillEditor
               ref={quillRef}
               theme="snow"
               value={content}
               onChange={setContent}
               modules={editorModules}
-              className="h-[350px] mb-12"
+              className="h-[350px] mb-12 text-black"
             />
           </div>
         </div>

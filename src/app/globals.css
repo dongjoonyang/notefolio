@@ -1,35 +1,68 @@
 @import "tailwindcss";
 
+/* --- 0. Tailwind v4 다크모드 인식 설정 --- */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html, body {
   box-sizing: border-box;
   scroll-behavior: smooth;
+  /* 기본 배경색과 글자색은 layout.tsx의 body 클래스에서 관리하지만, 
+     CSS 차원에서도 zinc 톤으로 기본값을 잡아줍니다. */
+}
+
+body {
+  @apply bg-white text-zinc-900 transition-colors duration-300;
+}
+
+.dark body {
+  @apply bg-zinc-950 text-zinc-100;
 }
 
 /* --- 1. 공통 컨텐츠 스타일 (prose-custom) --- */
 .prose-custom {
   line-height: 1.8;
-  color: #374151;
+  color: inherit; /* 부모의 zinc 컬러를 따라감 */
 }
 
 .prose-custom h2, .prose-custom h3 { scroll-margin-top: 100px; }
-.prose-custom h1 { font-size: 2.5rem; font-weight: 900; margin-top: 3rem; margin-bottom: 1.5rem; color: #111827; }
-.prose-custom h2 { font-size: 1.875rem; font-weight: 800; margin-top: 4rem; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f3f4f6; color: #1f2937; }
-.prose-custom h3 { font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #1f2937; }
+
+/* 제목 스타일 - Light/Dark 대응 */
+.prose-custom h1 { 
+  font-size: 2.5rem; font-weight: 900; margin-top: 3rem; margin-bottom: 1.5rem; 
+  @apply text-zinc-950 dark:text-zinc-50; 
+}
+
+.prose-custom h2 { 
+  font-size: 1.875rem; font-weight: 800; margin-top: 4rem; margin-bottom: 1.25rem; 
+  padding-bottom: 0.75rem; border-bottom: 1px solid;
+  @apply text-zinc-800 border-zinc-100 dark:text-zinc-100 dark:border-zinc-800; 
+}
+
+.prose-custom h3 { 
+  font-size: 1.5rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; 
+  @apply text-zinc-800 dark:text-zinc-200; 
+}
+
 .prose-custom p { margin-bottom: 1.5rem; }
 .prose-custom ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
 
-/* --- 2. 에디터 및 유저 페이지 공통 이미지 설정 --- */
-/* (에디터 .ql-editor 와 유저페이지 .content-view 모두 적용) */
+/* --- 2. 에디터 및 유저 페이지 공통 이미지 설정 (Float/Align) --- */
 .ql-editor img, 
 .content-view img {
-  display: inline-block !important; /* Tailwind의 block 설정을 무력화 */
+  display: inline-block !important;
   max-width: 100%;
   height: auto;
   vertical-align: bottom;
-  border-radius: 1rem; /* 디자인에 맞춰 조절 가능 */
+  border-radius: 1rem;
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
 }
 
-/* 왼쪽 정렬 (Float Left) */
+.content-view img:hover {
+  transform: scale(1.01);
+}
+
+/* 왼쪽 정렬 */
 .ql-editor img[style*="float: left"],
 .content-view img[style*="float: left"] {
   float: left !important;
@@ -37,7 +70,7 @@ html, body {
   margin-bottom: 10px !important;
 }
 
-/* 오른쪽 정렬 (Float Right) */
+/* 오른쪽 정렬 */
 .ql-editor img[style*="float: right"],
 .content-view img[style*="float: right"] {
   float: right !important;
@@ -45,7 +78,7 @@ html, body {
   margin-bottom: 10px !important;
 }
 
-/* 중앙 정렬 (Quill 기본값 대응) */
+/* 중앙 정렬 */
 .ql-editor img[style*="display: block; margin: auto;"],
 .content-view img[style*="display: block; margin: auto;"] {
   display: block !important;
@@ -53,26 +86,26 @@ html, body {
   margin: 2rem auto !important;
 }
 
-/* --- 3. 부모 컨테이너 레이아웃 수정 --- */
+/* --- 3. 부모 컨테이너 레이아웃 수정 (Float 해제 및 여백) --- */
 .content-view {
-  display: block !important; /* flex 영향을 차단하여 float가 정상 작동하게 함 */
+  display: block !important;
   width: 100%;
 }
 
-/* 문단(p)이 float된 이미지를 감싸지 못하고 튕겨나가는 현상 방지 */
 .ql-editor p,
 .content-view p {
   display: block; 
   overflow: visible;
+  white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
 }
 
-/* 이미지가 포함된 문단에서 높이가 0이 되는 현상 방지 */
+/* 이미지가 포함된 문단 레이아웃 보호 */
 .ql-editor p:has(img),
 .content-view p:has(img) {
   display: flow-root !important;
 }
 
-/* 하단 요소들이 float 이미지 옆으로 딸려 올라오는 것 방지 */
+/* Float 클리어 (하단 요소 겹침 방지) */
 .ql-editor::after,
 .content-view::after {
   content: "";
@@ -80,20 +113,43 @@ html, body {
   clear: both;
 }
 
-/* 본문의 문단(p) 태그 설정 수정 */
-.content-view p {
-  display: block;
-  overflow: visible;
-  /* ✨ 이 코드가 핵심입니다: 연속된 공백과 줄바꿈을 그대로 표시함 */
-  white-space: pre-wrap; 
+/* --- 4. Quill 에디터 다크모드 UI (Zinc 전용) --- */
+/* 다크모드 시 에디터 툴바와 배경색을 zinc 계열로 리셋 */
+.dark .quill-dark-wrapper .ql-toolbar {
+  background-color: #18181b; /* zinc-950 */
+  border-color: #27272a;     /* zinc-800 */
 }
 
-/* 사용자가 이미지를 클릭할 수 있다는 걸 알 수 있게 */
-.content-view img {
-  cursor: zoom-in; /* 돋보기 모양 커서 */
-  transition: transform 0.2s ease;
+.dark .quill-dark-wrapper .ql-container {
+  background-color: #09090b; /* zinc-950보다 더 어두운 톤 */
+  border-color: #27272a;
 }
 
-.content-view img:hover {
-  transform: scale(1.01); /* 마우스 올리면 아주 살짝 커짐 */
+/* 다크모드 아이콘/텍스트 색상 */
+.dark .ql-snow .ql-stroke { stroke: #e4e4e7; } /* zinc-300 */
+.dark .ql-snow .ql-fill { fill: #e4e4e7; }
+.dark .ql-snow .ql-picker { color: #e4e4e7; }
+
+/* 에디터 내부 본문 글자색 */
+.dark .ql-editor {
+  color: #f4f4f5; /* zinc-100 */
 }
+
+.dark .ql-editor.ql-blank::before {
+  color: #71717a; /* zinc-500 */
+}
+
+/* 드롭다운 옵션 배경 */
+.dark .ql-snow .ql-picker-options {
+  background-color: #18181b;
+  border-color: #27272a;
+}
+
+/* --- [B] 임시 무효화 섹션 (나중에 이 블록만 삭제하세요) --- */
+/* 다크모드여도 에디터 아이콘과 배경이 변하지 않도록 강제로 라이트 값을 주입합니다. */
+.dark .ql-snow .ql-stroke { stroke: #444 !important; }
+.dark .ql-snow .ql-fill { fill: #444 !important; }
+.dark .ql-snow .ql-picker { color: #444 !important; }
+.dark .ql-editor { color: #111 !important; }
+.dark .ql-toolbar { background-color: #fff !important; }
+.dark .ql-container { background-color: #fff !important; }

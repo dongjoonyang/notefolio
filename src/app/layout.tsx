@@ -1,13 +1,22 @@
+import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko">
-      <body className="antialiased text-slate-900 bg-white" suppressHydrationWarning={true}>
-        <div className="min-h-screen">
-          {children}
-        </div>
+    <html lang="ko" suppressHydrationWarning>
+      <body 
+        className="antialiased text-zinc-900 bg-white dark:text-zinc-100 dark:bg-zinc-950 transition-colors duration-300"
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="min-h-screen">
+            {children}
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

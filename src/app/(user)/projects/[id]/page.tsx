@@ -38,24 +38,24 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const olderPost = olderRows[0];
 
   return (
-    <article className="min-h-screen bg-white pb-20 relative">
+    <article className="min-h-screen bg-white dark:bg-zinc-950 pb-20 relative transition-colors duration-300">
       <ProgressBar />
 
       {/* 1. 헤더 영역 (제목 등) */}
-      <header className="pt-20 pb-12 border-b border-gray-50 bg-gray-50/30">
+      <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
         <div className="max-w-3xl mx-auto px-6">
-          <Link href="/all" className="text-sm font-medium text-gray-400 hover:text-black transition-colors mb-8 inline-block">
+          <Link href="/all" className="text-sm font-medium text-gray-400 dark:text-zinc-500 hover:text-black dark:hover:text-zinc-100 transition-colors mb-8 inline-block">
             ← 전체 목록으로
           </Link>
           <div className="flex items-center gap-3 mb-4">
-            <span className="bg-black text-white px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
+            <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
               {project.categoryName || "Uncategorized"}
             </span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 leading-tight mb-6 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-6 tracking-tight">
             {project.title}
           </h1>
-          <div className="text-gray-400 text-sm font-medium">
+          <div className="text-gray-400 dark:text-zinc-500 text-sm font-medium">
             Published on {new Date(project.createdAt).toLocaleDateString()}
           </div>
         </div>
@@ -74,32 +74,33 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           <ContentView html={project.description} />
           
           <div className="mt-24">
+            {/* TOC가 하단 감지를 위해 찾는 CommentSection 위치 유지 */}
             <CommentSection projectId={id} isAdmin={isAdmin} />
           </div>
         </div>
       </div>
 
       {/* 3. 하단 내비게이션 (이전/다음 글) */}
-      <div className="max-w-3xl mx-auto px-6 mt-32 border-t border-gray-100 pt-12">
+      <div className="max-w-3xl mx-auto px-6 mt-32 border-t border-gray-100 dark:border-zinc-800 pt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {newerPost ? (
-            <Link href={`/projects/${newerPost.id}`} className="group p-8 border border-gray-100 rounded-3xl hover:bg-gray-50 transition-all text-left">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] block mb-2">이전 글</span>
-              <span className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
+            <Link href={`/projects/${newerPost.id}`} className="group p-8 border border-gray-100 dark:border-zinc-800 rounded-3xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all text-left">
+              <span className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-[0.2em] block mb-2">이전 글</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
             </Link>
           ) : (
-            <div className="p-8 border border-dashed border-gray-100 rounded-3xl flex items-center justify-center opacity-40">
-              <span className="text-sm text-gray-300 font-medium">최신 게시물입니다</span>
+            <div className="p-8 border border-dashed border-gray-100 dark:border-zinc-800 rounded-3xl flex items-center justify-center opacity-40">
+              <span className="text-sm text-gray-300 dark:text-zinc-600 font-medium">최신 게시물입니다</span>
             </div>
           )}
           {olderPost ? (
-            <Link href={`/projects/${olderPost.id}`} className="group p-8 border border-gray-100 rounded-3xl hover:bg-gray-50 transition-all text-right">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] block mb-2">다음 글</span>
-              <span className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
+            <Link href={`/projects/${olderPost.id}`} className="group p-8 border border-gray-100 dark:border-zinc-800 rounded-3xl hover:bg-gray-50 dark:hover:bg-zinc-900 transition-all text-right">
+              <span className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-[0.2em] block mb-2">다음 글</span>
+              <span className="text-lg font-bold text-gray-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
             </Link>
           ) : (
-            <div className="p-8 border border-dashed border-gray-100 rounded-3xl flex items-center justify-center opacity-40">
-              <span className="text-sm text-gray-300 font-medium">마지막 게시물입니다</span>
+            <div className="p-8 border border-dashed border-gray-100 dark:border-zinc-800 rounded-3xl flex items-center justify-center opacity-40">
+              <span className="text-sm text-gray-300 dark:text-zinc-600 font-medium">마지막 게시물입니다</span>
             </div>
           )}
         </div>

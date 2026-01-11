@@ -10,7 +10,6 @@ export default function TOC() {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   
-  // ✅ 스크롤 감지 잠금용 Ref
   const isScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -42,12 +41,9 @@ export default function TOC() {
 
     const activeObserver = new IntersectionObserver(
       (entries) => {
-        // ✅ 클릭 이동 중일 때는 Observer의 업데이트를 완전히 무시
         if (isScrollingRef.current) return;
-
         const visibleEntries = entries.filter((entry) => entry.isIntersecting);
         if (visibleEntries.length > 0) {
-          // 가장 상단에 있는 요소를 활성화
           const topEntry = visibleEntries.reduce((prev, curr) => 
             prev.boundingClientRect.y < curr.boundingClientRect.y ? prev : curr
           );
@@ -81,26 +77,15 @@ export default function TOC() {
   const scrollTo = (id: string) => {
     const target = document.getElementById(id);
     if (target) {
-      // ✅ 1. 이전 타임아웃 제거 및 잠금 설정
       if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
       isScrollingRef.current = true;
-      
-      // ✅ 2. 즉시 ID 변경 (바가 즉시 이동하게 함)
       setActiveId(id);
-
       const offset = 100;
       const elementPosition = target.getBoundingClientRect().top + window.pageYOffset;
       const offsetPosition = elementPosition - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: "smooth"
-      });
-
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
       window.history.pushState(null, "", `#${id}`);
       setIsOpen(false);
-
-      // ✅ 3. 스크롤이 확실히 멈춘 뒤에만 잠금을 풂 (시간을 넉넉히 1초)
       scrollTimeoutRef.current = setTimeout(() => {
         isScrollingRef.current = false;
       }, 1000);
@@ -109,22 +94,24 @@ export default function TOC() {
 
   return (
     <>
-      <nav className={`relative pl-4 transition-opacity duration-300 ${isBottom ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
-        <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-gray-100 rounded-full" />
-        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6 ml-2 select-none">
+      <nav className={`relative pl-4 transition-all duration-300 ${isBottom ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
+        {/* ✅ 왼쪽 세로줄: gray-100 -> dark:zinc-800 */}
+        <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-gray-100 dark:bg-zinc-800 rounded-full" />
+        
+        {/* ✅ 소제목: gray-400 -> dark:zinc-500 */}
+        <p className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-6 ml-2 select-none">
           On this page
         </p>
         
         <ul className="relative flex flex-col gap-1">
           {headings.map((h) => (
             <li key={h.id} className="relative py-1">
-              {/* ✅ AnimatePresence를 빼고 motion.div만 사용하여 layoutId의 안정성을 높임 */}
               {activeId === h.id && (
                 <motion.div
                   layoutId="active-toc-indicator"
-                  className="absolute -left-[17px] w-[2px] bg-blue-600 rounded-full z-10"
+                  // ✅ 인디케이터 색상: blue-600 -> dark:zinc-100 (다크모드에선 밝게)
+                  className="absolute -left-[17px] w-[2px] bg-zinc-900 dark:bg-zinc-100 rounded-full z-10"
                   style={{ height: "20px", top: "calc(50% - 10px)" }}
-                  // 스프링 효과를 조금 더 묵직하게 조절 (튀는 현상 방지)
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
@@ -132,10 +119,11 @@ export default function TOC() {
               <a
                 href={`#${h.id}`}
                 onClick={(e) => { e.preventDefault(); scrollTo(h.id); }}
+                // ✅ 텍스트 색상: 활성/비활성 상태별 다크모드 대응
                 className={`text-sm block px-2 transition-all duration-300 outline-none ${
                   activeId === h.id 
-                    ? "text-blue-600 font-bold translate-x-1" 
-                    : "text-gray-400 hover:text-gray-900"
+                    ? "text-zinc-900 dark:text-zinc-50 font-bold translate-x-1" 
+                    : "text-gray-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
                 } ${h.level === 3 ? "pl-6 text-[13px]" : "pl-2"}`}
               >
                 {h.text}
@@ -144,7 +132,6 @@ export default function TOC() {
           ))}
         </ul>
       </nav>
-      {/* 모바일 버튼 등은 기존과 동일하게 유지 */}
     </>
   );
 }
