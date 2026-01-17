@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Save, Image as ImageIcon, X, Loader2, ArrowLeft } from "lucide-react";
+import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react"; // ✅ 아이콘 추가
 import 'react-quill-new/dist/quill.snow.css';
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
@@ -50,6 +50,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [content, setContent] = useState(''); 
   const [category, setCategory] = useState(''); 
   const [thumbnail, setThumbnail] = useState(""); 
+  const [isVisible, setIsVisible] = useState(true); // ✅ [추가] 공개 여부 상태
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,7 +68,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         const file = input.files?.[0];
         if (!file) return;
 
-        // 🚨 [추가] 용량 체크
         if (file.size > MAX_FILE_SIZE) {
           alert("이미지 용량이 너무 큽니다. 4MB 이하의 파일만 업로드 가능합니다.");
           return;
@@ -118,7 +118,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     },
   }), [imageHandler]);
 
-  // 데이터 초기 로딩 로직 (기존과 동일)
+  // 데이터 초기 로딩 로직
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -136,6 +136,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           const currentCat = catData.find((c: any) => c.name === projData.categoryName);
           setCategory(currentCat ? String(currentCat.id) : "");
           setThumbnail(projData.thumbnail || "");
+          setIsVisible(Number(projData.isVisible) !== 0); // ✅ [추가] DB의 isVisible 값을 상태에 반영
         }
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -146,15 +147,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     if (id) fetchData();
   }, [id]);
 
-  // 2️⃣ 썸네일 이미지 핸들러 (용량 체크 추가)
+  // 2️⃣ 썸네일 이미지 핸들러
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 🚨 [추가] 용량 체크
     if (file.size > MAX_FILE_SIZE) {
       alert("썸네일 용량이 너무 큽니다. 4MB 이하의 이미지만 업로드 가능합니다.");
-      e.target.value = ""; // 선택 비우기
+      e.target.value = ""; 
       return;
     }
 
@@ -176,7 +176,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  // 업데이트 실행 로직 (기존과 동일)
+  // 업데이트 실행 로직
   const handleUpdate = async () => {
     if (!title.trim() || !category) {
       alert("제목과 카테고리를 확인해주세요.");
@@ -194,6 +194,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       formData.append("description", content);
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
+      formData.append("isVisible", isVisible ? "1" : "0"); // ✅ [추가] formData에 가시성 정보 추가
 
       await updateProject(Number(id), formData);
       
@@ -214,7 +215,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
-      {/* UI 렌더링 부분 (기존과 동일) */}
       <div className="flex items-center justify-between mb-10">
         <div className="flex items-center gap-4">
           <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
@@ -233,7 +233,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       </div>
 
       <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-        {/* 제목 입력 */}
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Title</label>
           <input
@@ -246,7 +245,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* 카테고리 선택 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
             <select 
@@ -261,7 +259,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             </select>
           </div>
 
-          {/* 썸네일 업로드 */}
           <div>
             <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Thumbnail</label>
             <div className="flex items-center gap-4">
@@ -291,7 +288,21 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* 에디터 */}
+        {/* ✅ [추가] 공개/비공개 설정 체크박스 영역 */}
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+          <input
+            type="checkbox"
+            id="isVisible"
+            checked={isVisible}
+            onChange={(e) => setIsVisible(e.target.checked)}
+            className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+          />
+          <label htmlFor="isVisible" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
+            {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
+            {isVisible ? "Project is Public" : "Project is Private"}
+          </label>
+        </div>
+
         <div>
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Content</label>
           <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-inner">

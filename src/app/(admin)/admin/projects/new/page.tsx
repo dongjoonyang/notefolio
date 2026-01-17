@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ArrowLeft, Save, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff } from "lucide-react"; // ✅ 아이콘 추가
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -50,11 +50,12 @@ export default function NewProjectPage() {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [thumbnail, setThumbnail] = useState(""); 
+  const [isVisible, setIsVisible] = useState(true); // ✅ [변경] 공개 상태 State 추가
   const [categories, setCategories] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // ✅ 에디터 이미지 핸들러 (용량 체크 추가)
+  // ✅ 에디터 이미지 핸들러
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -66,7 +67,6 @@ export default function NewProjectPage() {
         const file = input.files?.[0];
         if (!file) return;
 
-        // 🚨 [추가] 4MB 용량 체크
         if (file.size > MAX_FILE_SIZE) {
           alert("이미지 용량이 너무 큽니다. 4MB 이하의 파일만 업로드 가능합니다.");
           return;
@@ -131,15 +131,14 @@ export default function NewProjectPage() {
     fetchCategories();
   }, []);
 
-  // ✅ 썸네일 업로드 핸들러 (용량 체크 추가)
+  // ✅ 썸네일 업로드 핸들러
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 🚨 [추가] 4MB 용량 체크
     if (file.size > MAX_FILE_SIZE) {
       alert("썸네일 용량이 너무 큽니다. 4MB 이하의 이미지만 업로드 가능합니다.");
-      e.target.value = ""; // 선택 초기화
+      e.target.value = ""; 
       return;
     }
 
@@ -176,7 +175,14 @@ export default function NewProjectPage() {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, categoryName: category, thumbnail }),
+        // ✅ [변경] 전송 데이터에 isVisible 추가
+        body: JSON.stringify({ 
+          title, 
+          content, 
+          categoryName: category, 
+          thumbnail, 
+          isVisible: isVisible ? 1 : 0 
+        }),
       });
       if (response.ok) {
         alert("등록 성공!");
@@ -262,6 +268,21 @@ export default function NewProjectPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ✅ [추가] 공개 여부 체크박스 섹션 */}
+        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+          <input
+            type="checkbox"
+            id="isVisible"
+            checked={isVisible}
+            onChange={(e) => setIsVisible(e.target.checked)}
+            className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+          />
+          <label htmlFor="isVisible" className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer select-none">
+            {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
+            {isVisible ? "웹사이트에 즉시 공개합니다" : "비공개로 저장합니다 (관리자만 볼 수 있음)"}
+          </label>
         </div>
 
         <div>

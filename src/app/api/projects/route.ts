@@ -7,7 +7,7 @@ import { pool } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // 💡 isVisible을 추가로 받습니다.
+    // 💡 프론트엔드에서 보낼 isVisible(boolean 혹은 number)을 받습니다.
     const { title, content, categoryName, thumbnail, isVisible } = body;
 
     if (!title || !categoryName) {
@@ -28,10 +28,12 @@ export async function POST(request: Request) {
     const [minOrderResult]: any = await pool.query("SELECT MIN(sortOrder) as minOrder FROM Project");
     const newOrder = (minOrderResult[0].minOrder !== null ? minOrderResult[0].minOrder : 0) - 1;
 
-    // 💡 INSERT 문에 isVisible 컬럼과 값을 추가했습니다.
+    // 💡 isVisible이 undefined면 1(공개), 있으면 숫자형으로 변환(true->1, false->0)하여 저장
+    const finalVisibility = isVisible !== undefined ? (isVisible ? 1 : 0) : 1;
+
     const [result]: any = await pool.query(
       "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible) VALUES (?, ?, ?, ?, ?, ?)",
-      [title, content, categoryId, thumbnail, newOrder, isVisible ?? 1] // 기본값 1
+      [title, content, categoryId, thumbnail, newOrder, finalVisibility]
     );
 
     return NextResponse.json({ success: true, id: result.insertId });
@@ -54,7 +56,7 @@ export async function GET(request: Request) {
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
-        p.isVisible, -- 💡 프로젝트 자체의 노출 여부 추가
+        p.isVisible, 
         c.name as categoryName, 
         IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder
