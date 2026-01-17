@@ -293,13 +293,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
         {/* ✅ [수정] 노출 설정 체크박스 영역 (토글 2개 배치) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 1. 웹사이트 공개 (부모 전원) */}
           <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
             <input
               type="checkbox"
               id="isVisible"
               checked={isVisible}
-              onChange={(e) => setIsVisible(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setIsVisible(checked);
+                // 💡 비공개로 변경 시 'All Works' 노출도 자동으로 해제
+                if (!checked) setShowInAll(false);
+              }}
+              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer accent-black"
             />
             <label htmlFor="isVisible" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
               {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
@@ -307,16 +313,28 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             </label>
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+          {/* 2. 전체 목록 노출 (자식 전원: isVisible에 의존) */}
+          <div className={`flex items-center gap-3 p-4 rounded-2xl border shadow-inner transition-all ${
+            !isVisible ? "bg-gray-100 border-gray-200 opacity-50" : "bg-slate-50 border-slate-100"
+          }`}>
             <input
               type="checkbox"
               id="showInAll"
               checked={showInAll}
+              // 💡 isVisible이 꺼져있으면 체크박스 잠금
+              disabled={!isVisible}
               onChange={(e) => setShowInAll(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+              className={`w-5 h-5 rounded border-gray-300 text-black focus:ring-black ${
+                !isVisible ? "cursor-not-allowed" : "cursor-pointer accent-black"
+              }`}
             />
-            <label htmlFor="showInAll" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
-              {showInAll ? <LayoutGrid size={16} className="text-purple-500" /> : <LayoutList size={16} className="text-slate-400" />}
+            <label 
+              htmlFor="showInAll" 
+              className={`flex items-center gap-2 text-[11px] font-black select-none uppercase tracking-tighter ${
+                !isVisible ? "text-slate-400 cursor-not-allowed" : "text-slate-600 cursor-pointer"
+              }`}
+            >
+              {showInAll && isVisible ? <LayoutGrid size={16} className="text-purple-500" /> : <LayoutList size={16} className="text-slate-400" />}
               {showInAll ? "Visible in All Works" : "Hidden from All Works"}
             </label>
           </div>

@@ -17,11 +17,25 @@ export default function TOC() {
     const contentArea = document.querySelector(".prose-custom");
     if (!contentArea) return;
 
+    // 💡 동일한 제목이 있을 경우 ID 중복을 방지하기 위한 카운터
+    const idCounts: { [key: string]: number } = {};
+
     const elements = Array.from(contentArea.querySelectorAll("h2, h3")).map((elem) => {
       const text = elem.textContent?.trim() || "";
-      const id = elem.id || text.replace(/\s+/g, "-").toLowerCase();
-      elem.id = id;
-      return { id, text, level: Number(elem.tagName.substring(1)) };
+      
+      // 기본 ID 생성 규칙
+      let baseId = elem.id || text.replace(/\s+/g, "-").toLowerCase();
+      
+      // 💡 중복 ID 체크 및 유니크 ID 부여
+      if (idCounts[baseId] !== undefined) {
+        idCounts[baseId]++;
+        baseId = `${baseId}-${idCounts[baseId]}`;
+      } else {
+        idCounts[baseId] = 0;
+      }
+
+      elem.id = baseId;
+      return { id: baseId, text, level: Number(elem.tagName.substring(1)) };
     });
     
     if (elements.length > 0) setHeadings(elements);
@@ -95,10 +109,8 @@ export default function TOC() {
   return (
     <>
       <nav className={`relative pl-4 transition-all duration-300 ${isBottom ? "opacity-20 pointer-events-none" : "opacity-100"}`}>
-        {/* ✅ 왼쪽 세로줄: gray-100 -> dark:zinc-800 */}
         <div className="absolute left-0 top-0 bottom-0 w-[1px] bg-gray-100 dark:bg-zinc-800 rounded-full" />
         
-        {/* ✅ 소제목: gray-400 -> dark:zinc-500 */}
         <p className="text-[10px] font-black text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-6 ml-2 select-none">
           On this page
         </p>
@@ -109,7 +121,6 @@ export default function TOC() {
               {activeId === h.id && (
                 <motion.div
                   layoutId="active-toc-indicator"
-                  // ✅ 인디케이터 색상: blue-600 -> dark:zinc-100 (다크모드에선 밝게)
                   className="absolute -left-[17px] w-[2px] bg-zinc-900 dark:bg-zinc-100 rounded-full z-10"
                   style={{ height: "20px", top: "calc(50% - 10px)" }}
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -119,7 +130,6 @@ export default function TOC() {
               <a
                 href={`#${h.id}`}
                 onClick={(e) => { e.preventDefault(); scrollTo(h.id); }}
-                // ✅ 텍스트 색상: 활성/비활성 상태별 다크모드 대응
                 className={`text-sm block px-2 transition-all duration-300 outline-none ${
                   activeId === h.id 
                     ? "text-zinc-900 dark:text-zinc-50 font-bold translate-x-1" 
