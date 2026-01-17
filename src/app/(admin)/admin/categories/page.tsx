@@ -16,6 +16,11 @@ function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
     zIndex: isDragging ? 50 : 0,
   };
 
+  // 💡 중요: DB 필드명이 isVisible인지 is_visible인지 확인이 필요할 수 있습니다.
+  // 기본적으로 category.isVisible을 체크하되, 없으면 켜진 상태(1)를 기본값으로 둡니다.
+  const rawValue = category.isVisible !== undefined ? category.isVisible : category.is_visible;
+  const isOn = rawValue === undefined ? true : Number(rawValue) !== 0;
+
   return (
     <div
       ref={setNodeRef}
@@ -29,27 +34,26 @@ function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
           <GripVertical size={18} />
         </div>
         <div className="flex items-center gap-2">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${category.isVisible === 0 ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-blue-500"}`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${!isOn ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-blue-500"}`}>
             <Tag size={14} />
           </div>
-          <span className={`font-medium transition-all ${category.isVisible === 0 ? "text-slate-300" : "text-slate-700"}`}>
+          <span className={`font-medium transition-all ${!isOn ? "text-slate-300" : "text-slate-700"}`}>
             {category.name}
           </span>
         </div>
       </div>
 
       <div className="flex items-center gap-4">
-        {/* 스위치 UI */}
         <button
           type="button"
-          onClick={() => onToggle(category.id, category.isVisible)}
+          onClick={() => onToggle(category.id, rawValue)}
           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-            Number(category.isVisible) === 0 ? "bg-gray-200" : "bg-black"
+            isOn ? "bg-black" : "bg-gray-200"
           }`}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-              Number(category.isVisible) === 0 ? "translate-x-1" : "translate-x-6"
+              isOn ? "translate-x-6" : "translate-x-1"
             }`}
           />
         </button>
@@ -71,13 +75,21 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const fetchCategories = async () => {
-    const res = await fetch("/api/categories");
-    const data = await res.json();
-    setCategories(data);
+    try {
+      const res = await fetch("/api/categories");
+      const data = await res.json();
+      // console.log("불러온 데이터:", data); // 💡 여기서 데이터에 isVisible이 있는지 확인해보세요!
+      setCategories(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoaded(true);
+    }
   };
 
   useEffect(() => { fetchCategories(); }, []);
@@ -124,32 +136,28 @@ export default function CategoriesPage() {
     if (res.ok) fetchCategories();
   };
 
-  // 💡 즉각적인 UI 반영을 위한 수정된 토글 함수
-  const toggleCategory = async (id: number, currentVisible: number) => {
-    const newVisible = Number(currentVisible) === 1 ? 0 : 1;
+  const toggleCategory = async (id: number, currentVisible: any) => {
+    // 💡 currentVisible이 undefined일 경우를 대비해 기본값 1에서 시작
+    const isNowVisible = currentVisible === undefined ? 1 : Number(currentVisible);
+    const newVisible = isNowVisible === 1 ? 0 : 1;
 
-    // 1. 서버 응답 전 화면부터 즉시 변경 (중요!)
     setCategories(prev => 
       prev.map(cat => cat.id === id ? { ...cat, isVisible: newVisible } : cat)
     );
 
-    // 2. 서버에 저장
     try {
       const res = await fetch(`/api/categories/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isVisible: newVisible }),
       });
-
-      if (!res.ok) {
-        // 실패 시 원래대로 롤백
-        fetchCategories();
-        alert("상태 변경에 실패했습니다. DB 컬럼을 확인해주세요.");
-      }
+      if (!res.ok) fetchCategories();
     } catch (error) {
       fetchCategories();
     }
   };
+
+  if (!isLoaded) return null;
 
   return (
     <div className="max-w-2xl p-8">

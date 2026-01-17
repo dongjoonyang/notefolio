@@ -15,16 +15,19 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 // 수정 (이름 수정 및 노출 상태 토글 공용)
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, isVisible } = await req.json(); // 프론트에서 보낸 name과 isVisible을 받음
+  const body = await req.json();
+  const { name, isVisible } = body;
 
   try {
-    // 💡 name과 isVisible 중 들어온 값만 업데이트하거나 둘 다 업데이트하도록 처리
-    if (isVisible !== undefined && name !== undefined) {
+    // 💡 isVisible이 undefined가 아닐 때, 숫자형(0 또는 1)으로 변환하여 처리
+    const numericVisible = isVisible !== undefined ? (isVisible ? 1 : 0) : undefined;
+
+    if (numericVisible !== undefined && name !== undefined) {
       // 이름과 노출상태 모두 변경 시
-      await pool.query("UPDATE Category SET name = ?, isVisible = ? WHERE id = ?", [name, isVisible, id]);
-    } else if (isVisible !== undefined) {
+      await pool.query("UPDATE Category SET name = ?, isVisible = ? WHERE id = ?", [name, numericVisible, id]);
+    } else if (numericVisible !== undefined) {
       // 노출 상태(스위치)만 변경 시
-      await pool.query("UPDATE Category SET isVisible = ? WHERE id = ?", [isVisible, id]);
+      await pool.query("UPDATE Category SET isVisible = ? WHERE id = ?", [numericVisible, id]);
     } else if (name !== undefined) {
       // 이름만 변경 시
       await pool.query("UPDATE Category SET name = ? WHERE id = ?", [name, id]);
@@ -32,6 +35,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    console.error("PUT Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
