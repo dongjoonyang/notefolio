@@ -1,8 +1,6 @@
 import { pool } from "@/lib/db";
 import Link from "next/link";
-import DeleteButton from "@/components/DeleteButton";
-import Image from "next/image";
-import ProjectVisibleToggle from "@/components/ProjectVisibleToggle";
+import AdminProjectList from "@/components/AdminProjectList"; // 💡 컴포넌트 추가
 
 export default async function AdminProjectsPage({
   searchParams,
@@ -17,7 +15,7 @@ export default async function AdminProjectsPage({
   const searchTerm = q || "";
   const categoryId = category || "";
 
-  // 1. 쿼리 빌드
+  // 1. 쿼리 빌드 (기존 유지)
   let countQuery = "SELECT COUNT(*) as count FROM Project WHERE 1=1";
   let dataQuery = `
     SELECT p.*, c.name as categoryName 
@@ -39,7 +37,7 @@ export default async function AdminProjectsPage({
     queryParams.push(categoryId);
   }
 
-  // 2. 데이터 병렬 로드
+  // 2. 데이터 병렬 로드 (기존 유지)
   const [
     [allCountRes], 
     [categoryStats], 
@@ -64,7 +62,7 @@ export default async function AdminProjectsPage({
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      {/* 헤더 섹션 */}
+      {/* 헤더 섹션 (기존 유지) */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-xl md:text-2xl font-bold font-sans">프로젝트 관리</h1>
@@ -78,7 +76,7 @@ export default async function AdminProjectsPage({
         </Link>
       </div>
 
-      {/* 통계 카드 */}
+      {/* 통계 카드 (기존 유지) */}
       <div className="flex overflow-x-auto pb-4 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8 scrollbar-hide">
         <Link 
           href="/admin/projects"
@@ -106,7 +104,7 @@ export default async function AdminProjectsPage({
         ))}
       </div>
 
-      {/* 필터 바 */}
+      {/* 필터 바 (기존 유지) */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
         <form action="/admin/projects" method="GET" className="flex flex-col md:flex-row gap-3">
           <select 
@@ -132,107 +130,12 @@ export default async function AdminProjectsPage({
         </form>
       </div>
 
-      {/* 리스트 섹션 */}
+      {/* 리스트 섹션 💡 교체된 부분 */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <table className="hidden md:table w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-100 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
-              <th className="px-6 py-4">Thumbnail</th>
-              <th className="px-6 py-4">Project Title</th>
-              <th className="px-6 py-4">Category</th>
-              <th className="px-6 py-4">Visible</th>
-              <th className="px-6 py-4">Date</th>
-              <th className="px-6 py-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {projects.map((project: any) => (
-              <tr key={project.id} className="hover:bg-gray-50/80 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="relative w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-100">
-                    {project.thumbnail ? (
-                      <Image src={project.thumbnail} alt="thumb" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-[10px] text-slate-300 font-bold">NO IMG</div>
-                    )}
-                  </div>
-                </td>
-                <td className="px-6 py-4 font-bold text-slate-800">{project.title}</td>
-                <td className="px-6 py-4">
-                  <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${
-                    project.categoryName ? "bg-slate-100 text-slate-600" : "bg-orange-50 text-orange-600"
-                  }`}>
-                    {project.categoryName || "UNCATEGORIZED"}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <ProjectVisibleToggle id={project.id} initialVisible={project.isVisible} />
-                </td>
-                <td className="px-6 py-4 text-[11px] text-slate-400 font-mono">
-                  {new Date(project.createdAt).toLocaleDateString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end gap-6 items-center">
-                    <Link 
-                      href={`/admin/projects/edit/${project.id}`} 
-                      className="text-slate-400 hover:text-black text-[11px] font-black transition uppercase tracking-widest"
-                    >
-                      EDIT
-                    </Link>
-                    <DeleteButton id={project.id} />
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* 모바일 리스트 */}
-        <div className="md:hidden divide-y divide-gray-100">
-          {projects.length > 0 ? (
-            projects.map((project: any) => (
-              <div key={project.id} className="p-5 flex flex-col gap-4">
-                <div className="flex gap-4 items-center">
-                  <div className="relative w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100">
-                    {project.thumbnail ? (
-                      <Image src={project.thumbnail} alt="thumb" fill className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center h-full text-[10px] text-slate-300 font-bold">NO IMG</div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest truncate">
-                        {project.categoryName || "UNCATEGORIZED"}
-                      </p>
-                      <ProjectVisibleToggle id={project.id} initialVisible={project.isVisible} />
-                    </div>
-                    <h4 className="font-bold text-slate-800 truncate leading-tight">{project.title}</h4>
-                    <p className="text-[10px] text-slate-400 mt-1">{new Date(project.createdAt).toLocaleDateString()}</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Link 
-                    href={`/admin/projects/edit/${project.id}`} 
-                    className="flex-1 bg-gray-50 text-slate-600 text-center py-2.5 rounded-xl text-[11px] font-black uppercase border border-gray-100 shadow-sm"
-                  >
-                    EDIT
-                  </Link>
-                  <div className="flex-1">
-                    <DeleteButton id={project.id} />
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="py-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
-              No results found.
-            </div>
-          )}
-        </div>
+        <AdminProjectList projects={projects} />
       </div>
 
-      {/* 페이징 */}
+      {/* 페이징 (기존 유지) */}
       {totalPages > 1 && (
         <div className="flex flex-wrap justify-center mt-10 gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (

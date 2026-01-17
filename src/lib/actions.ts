@@ -134,3 +134,43 @@ export async function deleteProject(id: number) {
     return { success: false };
   }
 }
+
+// 4. 프로젝트 일괄 삭제 (기존 deleteProject 로직 활용)
+export async function deleteMultipleProjects(ids: number[]) {
+  try {
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
+
+    for (const id of ids) {
+      // 각 프로젝트의 이미지/썸네일 삭제 로직 (기존 삭제 로직 재사용)
+      const [rows]: any = await pool.query(
+        "SELECT thumbnail, description FROM Project WHERE id = ?",
+        [id]
+      );
+
+      if (rows && rows.length > 0) {
+        const project = rows[0];
+        const urlsToDelete = new Set<string>();
+        if (project.thumbnail) urlsToDelete.add(project.thumbnail);
+        const matches = project.description?.match(urlRegex);
+        if (matches) matches.forEach((url: string) => urlsToDelete.add(url));
+
+        for (const url of Array.from(urlsToDelete)) {
+          try { await del(url, { token }); } catch (err) { console.error("파일 삭제 실패:", url); }
+        }
+      }
+    }
+
+    // DB에서 선택된 ID들 삭제
+    await pool.query("DELETE FROM Project WHERE id IN (?)", [ids]);
+
+    revalidatePath("/admin/projects");
+    revalidatePath("/all");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (error) {
+    console.error("Batch Delete Error:", error);
+    return { success: false, message: "일부 프로젝트 삭제 중 오류가 발생했습니다." };
+  }
+}
