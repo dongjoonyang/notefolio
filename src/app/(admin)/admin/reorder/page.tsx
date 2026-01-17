@@ -4,11 +4,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from "@dnd-kit/core";
 import { arrayMove, SortableContext, rectSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Save, ArrowLeft } from "lucide-react";
-import Link from "lucide-react";
-import { useRouter } from "next/navigation"; // 1. useRouter 추가
+import { GripVertical, Save, ArrowLeft, ChevronDown } from "lucide-react"; // ChevronDown 추가
+import { useRouter } from "next/navigation";
 
-// --- 개별 카드 컴포넌트 ---
+// --- 개별 카드 컴포넌트 (기존 유지) ---
 function SortableCard({ project }: { project: any }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: project.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 50 : 0 };
@@ -31,7 +30,7 @@ function SortableCard({ project }: { project: any }) {
 
 // --- 메인 페이지 컴포넌트 ---
 export default function ReorderPage() {
-  const router = useRouter(); // 2. 라우터 선언
+  const router = useRouter();
   const [projects, setProjects] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
@@ -39,10 +38,9 @@ export default function ReorderPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  // 데이터 로딩
+  // 데이터 로딩 (기존 유지)
   useEffect(() => {
     const fetchData = async () => {
-      // 💡 여기서도 캐시를 피하기 위해 t=${Date.now()}를 붙여줍니다.
       const [pRes, cRes] = await Promise.all([
         fetch(`/api/projects?limit=100&t=${Date.now()}`), 
         fetch("/api/categories")
@@ -57,63 +55,91 @@ export default function ReorderPage() {
     return filter === "all" ? projects : projects.filter(p => p.categoryName === filter);
   }, [filter, projects]);
 
-// admin/reorder/page.tsx 내부의 handleDragEnd 함수
-
-const handleDragEnd = async (event: DragEndEvent) => {
-  const { active, over } = event;
-  if (over && active.id !== over.id) {
-    const oldIndex = projects.findIndex((i) => i.id === active.id);
-    const newIndex = projects.findIndex((i) => i.id === over.id);
-    const newArray = arrayMove(projects, oldIndex, newIndex);
-    
-    setProjects(newArray); // 1. 화면에 즉시 반영 (부드러운 드래그)
-    setIsSaving(true);
-
-    try {
-      await fetch("/api/projects/reorder", {
-        method: "POST",
-        body: JSON.stringify({ ids: newArray.map(p => p.id) }),
-      });
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = projects.findIndex((i) => i.id === active.id);
+      const newIndex = projects.findIndex((i) => i.id === over.id);
+      const newArray = arrayMove(projects, oldIndex, newIndex);
       
-      // ✨ [수정] 페이지를 이동하지 않고, Next.js에게 서버 데이터가 바뀌었음을 알림
-      // 이렇게 하면 관리자 화면에 그대로 남으면서 캐시만 업데이트됩니다.
-      router.refresh(); 
+      setProjects(newArray);
+      setIsSaving(true);
 
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSaving(false); // 저장 중 알림 끄기
+      try {
+        await fetch("/api/projects/reorder", {
+          method: "POST",
+          body: JSON.stringify({ ids: newArray.map(p => p.id) }),
+        });
+        router.refresh(); 
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsSaving(false);
+      }
     }
-  }
-};
+  };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <header className="flex justify-between items-center mb-10">
+    <div className="p-6 md:p-8 max-w-7xl mx-auto">
+      <header className="flex justify-between items-center mb-8 md:mb-10">
         <div>
-          <a href="/admin" className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-            <ArrowLeft size={14}/> 관리자 홈
+          <a href="/admin" className="text-[11px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1 mb-2">
+            <ArrowLeft size={12}/> Back to Admin
           </a>
-          <h1 className="text-3xl font-black">순서 관리</h1>
+          <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">순서 관리</h1>
         </div>
         {isSaving && (
-          <div className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 animate-pulse">
-            <Save size={16}/> 저장 중...
+          <div className="bg-blue-600 text-white px-4 py-2 rounded-xl text-[11px] font-black flex items-center gap-2 animate-pulse uppercase tracking-widest shadow-lg shadow-blue-500/30">
+            <Save size={14}/> Saving...
           </div>
         )}
       </header>
 
-      {/* 카테고리 필터 */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-        <button onClick={() => setFilter("all")} className={`px-4 py-2 rounded-full text-sm font-bold ${filter === "all" ? "bg-slate-900 text-white" : "bg-white border"}`}>전체</button>
-        {categories.map(cat => (
-          <button key={cat.id} onClick={() => setFilter(cat.name)} className={`px-4 py-2 rounded-full text-sm font-bold ${filter === cat.name ? "bg-blue-600 text-white" : "bg-white border"}`}>{cat.name}</button>
-        ))}
+      {/* --- 카테고리 필터 영역 --- */}
+      <div className="mb-8">
+        {/* 모바일: 셀렉트 박스 형태 (md:hidden) */}
+        <div className="md:hidden">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 px-1">Filter Category</p>
+          <div className="relative">
+            <select 
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-sm font-bold shadow-sm outline-none appearance-none"
+            >
+              <option value="all">ALL CATEGORIES</option>
+              {categories.map(cat => (
+                <option key={cat.id} value={cat.name}>{cat.name.toUpperCase()}</option>
+              ))}
+            </select>
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+              <ChevronDown size={16} />
+            </div>
+          </div>
+        </div>
+
+        {/* 데스크탑: 기존 버튼 형태 (hidden md:flex) */}
+        <div className="hidden md:flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <button 
+            onClick={() => setFilter("all")} 
+            className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition ${filter === "all" ? "bg-black text-white" : "bg-white border border-gray-100 hover:border-gray-300"}`}
+          >
+            All
+          </button>
+          {categories.map(cat => (
+            <button 
+              key={cat.id} 
+              onClick={() => setFilter(cat.name)} 
+              className={`px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition whitespace-nowrap ${filter === cat.name ? "bg-blue-600 text-white" : "bg-white border border-gray-100 hover:border-gray-300"}`}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
       </div>
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={filteredItems} strategy={rectSortingStrategy}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredItems.map((project) => (
               <SortableCard key={project.id} project={project} />
             ))}
