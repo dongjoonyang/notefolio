@@ -8,9 +8,9 @@ export default function BackButton() {
   return (
     <button 
       onClick={() => router.back()} 
-      className="text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-4"
+      className="text-gray-500 hover:text-gray-800 flex items-center gap-1 mb-4 cursor-pointer"
     >
-      ← 이전 목록으로 (필터 유지)
+      ← 이전 목록으로
     </button>
   );
 }

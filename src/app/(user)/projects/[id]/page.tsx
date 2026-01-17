@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import ProgressBar from "./ProgressBar"; 
 import TOC from "./TOC";
 import ContentView from "./ContentView";
+import BackButton from "@/components/BackButton";
 
 // ✅ 목록 페이지와 통일된 로딩 오버레이 컴포넌트
 function LoadingOverlay() {
@@ -56,9 +57,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       {/* 1. 헤더 영역 (제목 등) */}
       <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
         <div className="max-w-3xl mx-auto px-6">
-          <Link href="/all" className="text-sm font-medium text-gray-400 dark:text-zinc-500 hover:text-black dark:hover:text-zinc-100 transition-colors mb-8 inline-block">
-            ← 전체 목록으로
-          </Link>
+
+          <BackButton />
+
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
               {project.categoryName || "Uncategorized"}
