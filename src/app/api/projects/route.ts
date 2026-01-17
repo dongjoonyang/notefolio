@@ -3,11 +3,12 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 
-// --- 1. 저장(POST) 기능 --- (기존 로직 유지)
+// --- 1. 저장(POST) 기능 ---
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, content, categoryName, thumbnail, isVisible } = body;
+    // 💡 showInAll 추가
+    const { title, content, categoryName, thumbnail, isVisible, showInAll } = body;
 
     if (!title || !categoryName) {
       return NextResponse.json({ error: "제목과 카테고리는 필수입니다." }, { status: 400 });
@@ -28,10 +29,12 @@ export async function POST(request: Request) {
     const newOrder = (minOrderResult[0].minOrder !== null ? minOrderResult[0].minOrder : 0) - 1;
 
     const finalVisibility = isVisible !== undefined ? (isVisible ? 1 : 0) : 1;
+    const finalShowInAll = showInAll !== undefined ? (showInAll ? 1 : 0) : 1; // 💡 기본값 1
 
+    // 💡 INSERT 문에 showInAll 컬럼과 값 추가
     const [result]: any = await pool.query(
-      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible) VALUES (?, ?, ?, ?, ?, ?)",
-      [title, content, categoryId, thumbnail, newOrder, finalVisibility]
+      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible, showInAll) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [title, content, categoryId, thumbnail, newOrder, finalVisibility, finalShowInAll]
     );
 
     return NextResponse.json({ success: true, id: result.insertId });
@@ -51,11 +54,12 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
 
   try {
-    // 💡 쿼리 수정: 서브쿼리를 사용하여 likeCount와 commentCount를 가져옵니다.
+    // 💡 SELECT 절에 p.showInAll 를 추가했습니다.
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
         p.isVisible, 
+        p.showInAll, 
         c.name as categoryName, 
         IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder,

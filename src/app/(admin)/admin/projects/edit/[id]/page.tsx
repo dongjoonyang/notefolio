@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react"; // ✅ 아이콘 추가
+import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff, LayoutGrid, LayoutList } from "lucide-react"; // ✅ 아이콘 추가
 import 'react-quill-new/dist/quill.snow.css';
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
@@ -50,13 +50,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [content, setContent] = useState(''); 
   const [category, setCategory] = useState(''); 
   const [thumbnail, setThumbnail] = useState(""); 
-  const [isVisible, setIsVisible] = useState(true); // ✅ [추가] 공개 여부 상태
+  const [isVisible, setIsVisible] = useState(true);
+  const [showInAll, setShowInAll] = useState(true); // ✅ [추가] 전체 노출 상태 State 추가
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 1️⃣ 에디터 이미지 핸들러 (용량 체크 추가)
+  // 1️⃣ 에디터 이미지 핸들러 (기존 유지)
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -136,7 +137,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           const currentCat = catData.find((c: any) => c.name === projData.categoryName);
           setCategory(currentCat ? String(currentCat.id) : "");
           setThumbnail(projData.thumbnail || "");
-          setIsVisible(Number(projData.isVisible) !== 0); // ✅ [추가] DB의 isVisible 값을 상태에 반영
+          setIsVisible(Number(projData.isVisible) !== 0);
+          setShowInAll(Number(projData.showInAll) !== 0); // ✅ [추가] DB의 showInAll 값을 상태에 반영
         }
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -147,7 +149,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     if (id) fetchData();
   }, [id]);
 
-  // 2️⃣ 썸네일 이미지 핸들러
+  // 2️⃣ 썸네일 이미지 핸들러 (기존 유지)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -194,7 +196,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       formData.append("description", content);
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
-      formData.append("isVisible", isVisible ? "1" : "0"); // ✅ [추가] formData에 가시성 정보 추가
+      formData.append("isVisible", isVisible ? "1" : "0");
+      formData.append("showInAll", showInAll ? "1" : "0"); // ✅ [추가] formData에 showInAll 정보 추가
 
       await updateProject(Number(id), formData);
       
@@ -288,19 +291,35 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* ✅ [추가] 공개/비공개 설정 체크박스 영역 */}
-        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-          <input
-            type="checkbox"
-            id="isVisible"
-            checked={isVisible}
-            onChange={(e) => setIsVisible(e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
-          />
-          <label htmlFor="isVisible" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
-            {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
-            {isVisible ? "Project is Public" : "Project is Private"}
-          </label>
+        {/* ✅ [수정] 노출 설정 체크박스 영역 (토글 2개 배치) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+            <input
+              type="checkbox"
+              id="isVisible"
+              checked={isVisible}
+              onChange={(e) => setIsVisible(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+            />
+            <label htmlFor="isVisible" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
+              {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
+              {isVisible ? "Project is Public" : "Project is Private"}
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
+            <input
+              type="checkbox"
+              id="showInAll"
+              checked={showInAll}
+              onChange={(e) => setShowInAll(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+            />
+            <label htmlFor="showInAll" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
+              {showInAll ? <LayoutGrid size={16} className="text-purple-500" /> : <LayoutList size={16} className="text-slate-400" />}
+              {showInAll ? "Visible in All Works" : "Hidden from All Works"}
+            </label>
+          </div>
         </div>
 
         <div>

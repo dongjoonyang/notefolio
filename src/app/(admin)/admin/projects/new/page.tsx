@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff } from "lucide-react"; // ✅ 아이콘 추가
+import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff, LayoutGrid, LayoutList } from "lucide-react"; // ✅ 아이콘 추가
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -50,7 +50,8 @@ export default function NewProjectPage() {
   const [content, setContent] = useState("");
   const [category, setCategory] = useState("");
   const [thumbnail, setThumbnail] = useState(""); 
-  const [isVisible, setIsVisible] = useState(true); // ✅ [변경] 공개 상태 State 추가
+  const [isVisible, setIsVisible] = useState(true);
+  const [showInAll, setShowInAll] = useState(true); // ✅ [추가] 전체 페이지 노출 State 추가
   const [categories, setCategories] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -175,13 +176,14 @@ export default function NewProjectPage() {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // ✅ [변경] 전송 데이터에 isVisible 추가
+        // ✅ [수정] showInAll 데이터 추가 전송
         body: JSON.stringify({ 
           title, 
           content, 
           categoryName: category, 
           thumbnail, 
-          isVisible: isVisible ? 1 : 0 
+          isVisible: isVisible ? 1 : 0,
+          showInAll: showInAll ? 1 : 0
         }),
       });
       if (response.ok) {
@@ -270,19 +272,35 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        {/* ✅ [추가] 공개 여부 체크박스 섹션 */}
-        <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
-          <input
-            type="checkbox"
-            id="isVisible"
-            checked={isVisible}
-            onChange={(e) => setIsVisible(e.target.checked)}
-            className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
-          />
-          <label htmlFor="isVisible" className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer select-none">
-            {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
-            {isVisible ? "웹사이트에 즉시 공개합니다" : "비공개로 저장합니다 (관리자만 볼 수 있음)"}
-          </label>
+        {/* ✅ [수정] 노출 설정 섹션 (토글 2개 배치) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <input
+              type="checkbox"
+              id="isVisible"
+              checked={isVisible}
+              onChange={(e) => setIsVisible(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+            />
+            <label htmlFor="isVisible" className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer select-none">
+              {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
+              {isVisible ? "웹사이트 공개" : "비공개 저장"}
+            </label>
+          </div>
+
+          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
+            <input
+              type="checkbox"
+              id="showInAll"
+              checked={showInAll}
+              onChange={(e) => setShowInAll(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer"
+            />
+            <label htmlFor="showInAll" className="flex items-center gap-2 text-sm font-bold text-slate-700 cursor-pointer select-none">
+              {showInAll ? <LayoutGrid size={16} className="text-purple-500" /> : <LayoutList size={16} className="text-slate-400" />}
+              {showInAll ? "전체 목록 노출" : "전체 목록 제외"}
+            </label>
+          </div>
         </div>
 
         <div>

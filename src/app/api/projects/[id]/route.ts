@@ -58,7 +58,7 @@ export async function DELETE(
   }
 }
 
-// --- 💡 [새로 추가] 노출 여부 수정을 위한 PUT 함수 ---
+// --- 💡 [수정됨] 노출 여부 수정을 위한 PUT 함수 ---
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -66,15 +66,26 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { isVisible } = body; // 프론트에서 보낼 0 또는 1
+    
+    // 1. ShowInAll 토글 요청이 온 경우
+    if (body.showInAll !== undefined) {
+      await pool.query(
+        "UPDATE Project SET showInAll = ? WHERE id = ?",
+        [body.showInAll, id]
+      );
+      return NextResponse.json({ success: true });
+    }
 
-    // isVisible 값만 선택적으로 업데이트합니다.
-    await pool.query(
-      "UPDATE Project SET isVisible = ? WHERE id = ?",
-      [isVisible, id]
-    );
+    // 2. Visible 토글 요청이 온 경우
+    if (body.isVisible !== undefined) {
+      await pool.query(
+        "UPDATE Project SET isVisible = ? WHERE id = ?",
+        [body.isVisible, id]
+      );
+      return NextResponse.json({ success: true });
+    }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "잘못된 요청입니다." }, { status: 400 });
   } catch (error: any) {
     console.error("🚨 PUT 에러:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

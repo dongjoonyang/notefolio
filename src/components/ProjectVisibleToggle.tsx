@@ -2,15 +2,22 @@
 
 import { useState } from "react";
 
-export default function ProjectVisibleToggle({ id, initialVisible }: { id: number; initialVisible: number }) {
+export default function ProjectVisibleToggle({ 
+  id, 
+  initialVisible, 
+  onStatusChange // 💡 상태 변경 시 부모에게 알려주는 콜백 추가
+}: { 
+  id: number; 
+  initialVisible: number;
+  onStatusChange?: (val: number) => void;
+}) {
   const [isVisible, setIsVisible] = useState(Number(initialVisible));
   const [isLoading, setIsLoading] = useState(false);
 
   const toggle = async () => {
     if (isLoading) return;
     const newVisible = isVisible === 1 ? 0 : 1;
-    
-    // 1. UI 즉각 반영
+
     setIsVisible(newVisible);
     setIsLoading(true);
 
@@ -22,8 +29,11 @@ export default function ProjectVisibleToggle({ id, initialVisible }: { id: numbe
       });
 
       if (!res.ok) throw new Error();
+      
+      // 💡 서버 저장 성공 시 부모(AdminProjectList)의 상태도 업데이트
+      if (onStatusChange) onStatusChange(newVisible);
+
     } catch (error) {
-      // 실패 시 롤백
       setIsVisible(isVisible);
       alert("상태 변경에 실패했습니다.");
     } finally {

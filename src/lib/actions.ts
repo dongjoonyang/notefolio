@@ -13,11 +13,14 @@ export async function createProject(formData: FormData) {
   const categoryId = formData.get("categoryId");
   const thumbnail = formData.get("thumbnail");
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
+  // 💡 [추가] 전체 페이지 노출 여부 데이터 가져오기 (기본값 1)
+  const showInAll = formData.get("showInAll") === "0" ? 0 : 1;
 
   try {
+    // 💡 [수정] showInAll 컬럼 추가
     await pool.query(
-      "INSERT INTO Project (title, description, categoryId, thumbnail, isVisible) VALUES (?, ?, ?, ?, ?)",
-      [title, description, categoryId, thumbnail, isVisible]
+      "INSERT INTO Project (title, description, categoryId, thumbnail, isVisible, showInAll) VALUES (?, ?, ?, ?, ?, ?)",
+      [title, description, categoryId, thumbnail, isVisible, showInAll]
     );
   } catch (error) {
     console.error("Create Error:", error);
@@ -37,6 +40,8 @@ export async function updateProject(id: number, formData: FormData) {
   const categoryId = formData.get("categoryId");
   const newThumbnail = formData.get("thumbnail") as string;
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
+  // 💡 [추가] 전체 페이지 노출 여부 데이터 가져오기
+  const showInAll = formData.get("showInAll") === "0" ? 0 : 1;
 
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -71,9 +76,10 @@ export async function updateProject(id: number, formData: FormData) {
       }
     }
 
+    // 💡 [수정] showInAll 컬럼 업데이트 추가
     await pool.query(
-      "UPDATE Project SET title = ?, description = ?, categoryId = ?, thumbnail = ?, isVisible = ? WHERE id = ?",
-      [title, description, categoryId, newThumbnail, isVisible, id]
+      "UPDATE Project SET title = ?, description = ?, categoryId = ?, thumbnail = ?, isVisible = ?, showInAll = ? WHERE id = ?",
+      [title, description, categoryId, newThumbnail, isVisible, showInAll, id]
     );
 
     revalidatePath("/admin/projects");
@@ -89,7 +95,7 @@ export async function updateProject(id: number, formData: FormData) {
   redirect("/admin/projects");
 }
 
-// 3. 프로젝트 삭제
+// 3. 프로젝트 삭제 (기존 유지)
 export async function deleteProject(id: number) {
   try {
     const [rows]: any = await pool.query(
@@ -132,7 +138,7 @@ export async function deleteProject(id: number) {
   }
 }
 
-// 4. 프로젝트 일괄 삭제
+// 4. 프로젝트 일괄 삭제 (기존 유지)
 export async function deleteMultipleProjects(ids: number[]) {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -171,7 +177,7 @@ export async function deleteMultipleProjects(ids: number[]) {
 }
 
 /**
- * 5. 프로젝트 좋아요 토글 (IP 기반)
+ * 5. 프로젝트 좋아요 토글 (기존 유지)
  */
 export async function toggleProjectLike(projectId: number) {
   const headerList = await headers();
@@ -205,7 +211,7 @@ export async function toggleProjectLike(projectId: number) {
 }
 
 /**
- * 6. 좋아요 상태 및 개수 가져오기
+ * 6. 좋아요 상태 및 개수 가져오기 (기존 유지)
  */
 export async function getLikeStatus(projectId: number) {
   const headerList = await headers();

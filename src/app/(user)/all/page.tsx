@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
-// 💡 좋아요와 댓글 아이콘을 위해 추가
 import { Heart, MessageCircle } from "lucide-react";
 
 // ✅ 로딩 오버레이 컴포넌트
@@ -62,6 +61,7 @@ function ProjectListContent() {
     const targetPage = isReset ? 1 : page;
     
     try {
+      // API 호출 시 showInAll 데이터도 함께 넘어와야 합니다.
       const response = await fetch(
         `/api/projects?page=${targetPage}&limit=6&search=${activeSearch}&category=${categoryParam}&v=${Date.now()}`
       );
@@ -105,6 +105,24 @@ function ProjectListContent() {
     return () => observer.disconnect();
   }, [hasMore, loading, fetchProjects]);
 
+  // --- ✨ 필터링 로직 정의 ---
+  const filteredProjects = projects.filter((project) => {
+    const isVisible = Number(project.isVisible) !== 0;
+    const categoryVisible = Number(project.categoryIsVisible) !== 0;
+    const showInAll = Number(project.showInAll) !== 0;
+
+    // 1. 공통: 프로젝트 자체와 카테고리가 Visible 상태여야 함
+    if (!isVisible || !categoryVisible) return false;
+
+    // 2. All 페이지일 때만 showInAll 토글 상태를 따름
+    if (categoryParam === "all") {
+      return showInAll;
+    }
+
+    // 3. 특정 카테고리 페이지일 때는 showInAll에 상관없이 보여줌
+    return true;
+  });
+
   return (
     <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
@@ -134,50 +152,42 @@ function ProjectListContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {projects
-          .filter((project) => 
-            Number(project.categoryIsVisible) !== 0 && 
-            Number(project.isVisible) !== 0
-          )
-          .map((project, index) => (
-            <Link 
-              href={`/projects/${project.id}`} 
-              key={`${project.id}-${index}`} 
-              className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
-            >
-              <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
-                {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
-              </div>
-              <div className="p-6">
-                {/* 💡 카테고리와 카운트 정보를 한 줄에 배치 */}
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
-                    {project.categoryName || "Mixed"}
-                  </span>
-                  
-                  <div className="flex items-center gap-3 text-slate-400 dark:text-zinc-500">
-                    {/* 좋아요 수 */}
-                    <div className="flex items-center gap-1">
-                      <Heart size={12} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
-                      <span className="text-[11px] font-bold">{project.likeCount || 0}</span>
-                    </div>
-                    {/* 댓글 수 */}
-                    <div className="flex items-center gap-1">
-                      <MessageCircle size={12} />
-                      <span className="text-[11px] font-bold">{project.commentCount || 0}</span>
-                    </div>
+        {filteredProjects.map((project, index) => (
+          <Link 
+            href={`/projects/${project.id}`} 
+            key={`${project.id}-${index}`} 
+            className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
+          >
+            <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
+              {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
+            </div>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
+                  {project.categoryName || "Mixed"}
+                </span>
+                
+                <div className="flex items-center gap-3 text-slate-400 dark:text-zinc-500">
+                  <div className="flex items-center gap-1">
+                    <Heart size={12} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
+                    <span className="text-[11px] font-bold">{project.likeCount || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle size={12} />
+                    <span className="text-[11px] font-bold">{project.commentCount || 0}</span>
                   </div>
                 </div>
-
-                <h2 className="text-xl font-bold mt-1 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
-                  {project.title}
-                </h2>
-                <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
-                  {cleanDescription(project.description)}
-                </p>
               </div>
-            </Link>
-          ))}
+
+              <h2 className="text-xl font-bold mt-1 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
+                {project.title}
+              </h2>
+              <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
+                {cleanDescription(project.description)}
+              </p>
+            </div>
+          </Link>
+        ))}
 
         {hasMore && (loading || projects.length === 0) && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
@@ -191,7 +201,7 @@ function ProjectListContent() {
         ))}
       </div>
 
-      {!loading && projects.filter(p => Number(p.categoryIsVisible) !== 0 && Number(p.isVisible) !== 0).length === 0 && (
+      {!loading && filteredProjects.length === 0 && (
         <div className="py-24 text-center text-slate-300 dark:text-zinc-700 font-bold uppercase tracking-widest border border-dashed border-slate-100 dark:border-zinc-800 rounded-3xl">
           No Results Found
         </div>
