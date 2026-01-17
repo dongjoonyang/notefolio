@@ -16,23 +16,7 @@ export default async function AdminProjectsPage({
   const searchTerm = q || "";
   const categoryId = category || "";
 
-  // [기존 데이터 로직 유지]
-  const [allCountRes]: any = await pool.query("SELECT COUNT(*) as count FROM Project");
-  const absoluteTotal = allCountRes[0].count;
-
-  const [categoryStats]: any = await pool.query(`
-    SELECT c.id, c.name, COUNT(p.id) as projectCount 
-    FROM Category c 
-    LEFT JOIN Project p ON c.id = p.categoryId 
-    GROUP BY c.id, c.name, c.sortOrder
-    ORDER BY c.sortOrder ASC
-  `);
-
-  const [noCategoryRes]: any = await pool.query(`
-    SELECT COUNT(*) as count FROM Project WHERE categoryId IS NULL
-  `);
-  const uncategorizedCount = noCategoryRes[0].count;
-
+  // 💡 쿼리 빌드
   let countQuery = "SELECT COUNT(*) as count FROM Project WHERE 1=1";
   let dataQuery = `
     SELECT p.*, c.name as categoryName 
@@ -54,16 +38,32 @@ export default async function AdminProjectsPage({
     queryParams.push(categoryId);
   }
 
-  const [totalResult]: any = await pool.query(countQuery, queryParams);
+  // 🚀 [핵심 수정] 모든 DB 쿼리를 동시에(병렬) 실행하여 속도 최적화
+  const [
+    [allCountRes], 
+    [categoryStats], 
+    [totalResult], 
+    [projects]
+  ]: any = await Promise.all([
+    pool.query("SELECT COUNT(*) as count FROM Project"),
+    pool.query(`
+      SELECT c.id, c.name, COUNT(p.id) as projectCount 
+      FROM Category c 
+      LEFT JOIN Project p ON c.id = p.categoryId 
+      GROUP BY c.id, c.name, c.sortOrder
+      ORDER BY c.sortOrder ASC
+    `),
+    pool.query(countQuery, queryParams),
+    pool.query(dataQuery + " ORDER BY p.createdAt DESC LIMIT ? OFFSET ?", [...queryParams, limit, offset])
+  ]);
+
+  const absoluteTotal = allCountRes[0].count;
   const filteredTotal = totalResult[0].count; 
   const totalPages = Math.ceil(filteredTotal / limit);
 
-  dataQuery += " ORDER BY p.createdAt DESC LIMIT ? OFFSET ?";
-  const [projects]: any = await pool.query(dataQuery, [...queryParams, limit, offset]);
-
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      {/* 헤더 섹션 - 모바일에서 세로 나열 */}
+      {/* 헤더 섹션 */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-xl md:text-2xl font-bold font-sans">프로젝트 관리</h1>
@@ -77,7 +77,7 @@ export default async function AdminProjectsPage({
         </Link>
       </div>
 
-      {/* 📊 1. 요약 통계 카드 - 가로 스크롤 대응 */}
+      {/* 📊 1. 요약 통계 카드 */}
       <div className="flex overflow-x-auto pb-4 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8 scrollbar-hide">
         <Link 
           href="/admin/projects"
@@ -105,7 +105,7 @@ export default async function AdminProjectsPage({
         ))}
       </div>
 
-      {/* 🔍 2. 필터 바 - 모바일에서 한 줄씩 배치 */}
+      {/* 🔍 2. 필터 바 */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
         <form action="/admin/projects" method="GET" className="flex flex-col md:flex-row gap-3">
           <select 
@@ -133,10 +133,8 @@ export default async function AdminProjectsPage({
         </form>
       </div>
 
-      {/* 📄 3. 리스트 섹션 (테이블/카드 스위칭) */}
+      {/* 📄 3. 리스트 섹션 */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        
-        {/* 🖥️ 데스크톱 테이블 (md 이상에서만 보임) */}
         <table className="hidden md:table w-full text-left">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
@@ -184,7 +182,7 @@ export default async function AdminProjectsPage({
           </tbody>
         </table>
 
-        {/* 📱 모바일용 카드 리스트 (md 미만에서만 보임) */}
+        {/* 모바일용 카드 리스트 */}
         <div className="md:hidden divide-y divide-gray-100">
           {projects.length > 0 ? (
             projects.map((project: any) => (
@@ -226,7 +224,7 @@ export default async function AdminProjectsPage({
         </div>
       </div>
 
-      {/* 🔢 4. 페이징 섹션 - 모바일 대응 */}
+      {/* 🔢 4. 페이징 */}
       {totalPages > 1 && (
         <div className="flex flex-wrap justify-center mt-10 gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
