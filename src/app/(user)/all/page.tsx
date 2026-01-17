@@ -7,12 +7,11 @@ import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
 
-// ✅ 로딩 오버레이 컴포넌트 (파일을 따로 만들기 번거로우시면 여기에 포함해서 쓰셔도 됩니다)
+// ✅ 로딩 오버레이 컴포넌트
 function LoadingOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-all">
       <div className="flex flex-col items-center gap-4">
-        {/* 스피너 애니메이션 */}
         <div className="w-10 h-10 border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin"></div>
         <p className="text-white dark:text-zinc-100 font-bold tracking-widest uppercase text-[10px]">Loading</p>
       </div>
@@ -134,30 +133,32 @@ function ProjectListContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {projects.map((project, index) => (
-          <Link 
-            href={`/projects/${project.id}`} 
-            key={`${project.id}-${index}`} 
-            className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
-          >
-            <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
-              {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
-            </div>
-            <div className="p-6">
-              <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
-                {project.categoryName || "Mixed"}
-              </span>
-              <h2 className="text-xl font-bold mt-3 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
-                {project.title}
-              </h2>
-              <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
-                {cleanDescription(project.description)}
-              </p>
-            </div>
-          </Link>
-        ))}
+        {/* 💡 카테고리 노출 상태가 0(미노출)인 프로젝트는 필터링하여 숨김 */}
+        {projects
+          .filter((project) => Number(project.categoryIsVisible) !== 0)
+          .map((project, index) => (
+            <Link 
+              href={`/projects/${project.id}`} 
+              key={`${project.id}-${index}`} 
+              className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
+            >
+              <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
+                {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
+              </div>
+              <div className="p-6">
+                <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
+                  {project.categoryName || "Mixed"}
+                </span>
+                <h2 className="text-xl font-bold mt-3 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
+                  {project.title}
+                </h2>
+                <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
+                  {cleanDescription(project.description)}
+                </p>
+              </div>
+            </Link>
+          ))}
 
-        {/* 기존 스켈레톤 UI도 유지 (오버레이와 함께 쓰면 더 자연스럽습니다) */}
         {hasMore && (loading || projects.length === 0) && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
             <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />

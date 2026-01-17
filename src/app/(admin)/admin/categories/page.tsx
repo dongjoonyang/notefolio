@@ -6,8 +6,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// --- 개별 행 컴포넌트 (Sortable Item) ---
-function SortableRow({ category, onEdit, onDelete }: any) {
+// --- 개별 행 컴포넌트 ---
+function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
 
   const style = {
@@ -25,31 +25,48 @@ function SortableRow({ category, onEdit, onDelete }: any) {
       }`}
     >
       <div className="flex items-center gap-4">
-        {/* 드래그 핸들: attributes와 listeners를 여기에만 걸어줍니다 */}
         <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1">
           <GripVertical size={18} />
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${category.isVisible === 0 ? "bg-gray-100 text-gray-400" : "bg-blue-50 text-blue-500"}`}>
             <Tag size={14} />
           </div>
-          <span className="font-medium text-slate-700">{category.name}</span>
+          <span className={`font-medium transition-all ${category.isVisible === 0 ? "text-slate-300" : "text-slate-700"}`}>
+            {category.name}
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-1">
-        <button onClick={() => onEdit(category.id, category.name)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-          <Edit2 size={16} />
+      <div className="flex items-center gap-4">
+        {/* 스위치 UI */}
+        <button
+          type="button"
+          onClick={() => onToggle(category.id, category.isVisible)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+            Number(category.isVisible) === 0 ? "bg-gray-200" : "bg-black"
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+              Number(category.isVisible) === 0 ? "translate-x-1" : "translate-x-6"
+            }`}
+          />
         </button>
-        <button onClick={() => onDelete(category.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
-          <Trash2 size={16} />
-        </button>
+
+        <div className="flex items-center gap-1 border-l pl-3">
+          <button onClick={() => onEdit(category.id, category.name)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
+            <Edit2 size={16} />
+          </button>
+          <button onClick={() => onDelete(category.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-// --- 메인 페이지 컴포넌트 ---
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState("");
@@ -65,17 +82,14 @@ export default function CategoriesPage() {
 
   useEffect(() => { fetchCategories(); }, []);
 
-  // 순서 저장 API 호출
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       const oldIndex = categories.findIndex((c) => c.id === active.id);
       const newIndex = categories.findIndex((c) => c.id === over.id);
       const newArray = arrayMove(categories, oldIndex, newIndex);
-      
-      setCategories(newArray); // 즉시 반영
+      setCategories(newArray);
       setIsUpdating(true);
-
       await fetch("/api/categories/reorder", {
         method: "POST",
         body: JSON.stringify({ ids: newArray.map(c => c.id) }),
@@ -89,7 +103,7 @@ export default function CategoriesPage() {
     if (!newCategory.trim()) return;
     const res = await fetch("/api/categories", {
       method: "POST",
-      body: JSON.stringify({ name: newCategory }),
+      body: JSON.stringify({ name: newCategory, isVisible: 1 }),
     });
     if (res.ok) { setNewCategory(""); fetchCategories(); }
   };
@@ -110,14 +124,41 @@ export default function CategoriesPage() {
     if (res.ok) fetchCategories();
   };
 
+  // 💡 즉각적인 UI 반영을 위한 수정된 토글 함수
+  const toggleCategory = async (id: number, currentVisible: number) => {
+    const newVisible = Number(currentVisible) === 1 ? 0 : 1;
+
+    // 1. 서버 응답 전 화면부터 즉시 변경 (중요!)
+    setCategories(prev => 
+      prev.map(cat => cat.id === id ? { ...cat, isVisible: newVisible } : cat)
+    );
+
+    // 2. 서버에 저장
+    try {
+      const res = await fetch(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isVisible: newVisible }),
+      });
+
+      if (!res.ok) {
+        // 실패 시 원래대로 롤백
+        fetchCategories();
+        alert("상태 변경에 실패했습니다. DB 컬럼을 확인해주세요.");
+      }
+    } catch (error) {
+      fetchCategories();
+    }
+  };
+
   return (
     <div className="max-w-2xl p-8">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-black text-slate-900">Categories</h1>
-          <p className="text-slate-500 text-sm mt-1">드래그하여 메뉴 노출 순서를 변경하세요.</p>
+          <p className="text-slate-500 text-sm mt-1">드래그로 순서 변경, 스위치로 노출 여부를 설정하세요.</p>
         </div>
-        {isUpdating && <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full font-bold animate-pulse">순서 업데이트 중...</span>}
+        {isUpdating && <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full font-bold animate-pulse">업데이트 중...</span>}
       </div>
 
       <form onSubmit={addCategory} className="flex gap-2 mb-10 bg-white p-2 rounded-2xl border shadow-sm">
@@ -143,6 +184,7 @@ export default function CategoriesPage() {
                   category={category} 
                   onEdit={editCategory} 
                   onDelete={deleteCategory} 
+                  onToggle={toggleCategory}
                 />
               ))}
             </div>

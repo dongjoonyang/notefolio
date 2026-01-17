@@ -61,7 +61,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
 
   const showAdminMenu = isMounted && isAdmin;
 
-  // ✅ Zinc 테마에 맞춘 동적 스타일링 (라이트: black, 다크: white)
   const getLinkStyle = (isActive: boolean) => 
     `flex items-center h-full px-1 transition-all duration-200 ${
       isActive 
@@ -73,7 +72,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
     `block text-2xl font-black py-4 ${isActive ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-300 dark:text-zinc-700"}`;
 
   return (
-    // ✅ 네비바 배경색 다크모드 대응
     <nav className="border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 sticky top-0 z-[60] shadow-sm transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-12 h-full">
@@ -81,19 +79,20 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>ALL</Link>
-            {categories?.map((cat: any) => (
-              <Link key={cat.id} href={`/all?category=${cat.name}`} className={getLinkStyle(currentCategory === cat.name)}>
-                {cat.name}
-              </Link>
-            ))}
+            {/* 💡 노출 설정(isVisible === 1)된 카테고리만 렌더링 */}
+            {categories
+              ?.filter((cat: any) => Number(cat.isVisible) !== 0)
+              .map((cat: any) => (
+                <Link key={cat.id} href={`/all?category=${cat.name}`} className={getLinkStyle(currentCategory === cat.name)}>
+                  {cat.name}
+                </Link>
+              ))}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="hidden lg:flex items-center gap-5">
-            {/* ✅ 테마 토글 버튼 배치 (ADMIN 버튼 왼쪽) */}
             <ThemeToggle />
-
             {showAdminMenu && (
               <>
                 <Link href="/admin" target="_blank" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">ADMIN</Link>
@@ -102,7 +101,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
             )}
           </div>
 
-          {/* 모바일 햄버거 메뉴 버튼 색상 대응 */}
           <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="lg:hidden flex flex-col gap-1.5 z-[70] p-2"
@@ -123,15 +121,17 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           >
             <div className="flex flex-col gap-2">
               <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>ALL</Link>
-              {categories?.map((cat: any) => (
-                <Link key={cat.id} href={`/all?category=${cat.name}`} className={getMobileLinkStyle(currentCategory === cat.name)}>
-                  {cat.name}
-                </Link>
-              ))}
+              {/* 💡 모바일 메뉴에서도 노출 설정된 것만 필터링 */}
+              {categories
+                ?.filter((cat: any) => Number(cat.isVisible) !== 0)
+                .map((cat: any) => (
+                  <Link key={cat.id} href={`/all?category=${cat.name}`} className={getMobileLinkStyle(currentCategory === cat.name)}>
+                    {cat.name}
+                  </Link>
+                ))}
             </div>
             
             <div className="mt-auto pt-10 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-6">
-              {/* 모바일 테마 토글 */}
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500 dark:text-zinc-400 font-medium">Appearance</span>
                 <ThemeToggle />

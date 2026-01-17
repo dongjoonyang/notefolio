@@ -50,10 +50,13 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
 
   try {
+    // api/projects/route.ts 내 GET 함수 쿼리 부분 수정
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
-        c.name as categoryName, p.createdAt, p.sortOrder
+        c.name as categoryName, 
+        IFNULL(c.isVisible, 1) as categoryIsVisible, -- 💡 NULL인 경우 기본값 1(노출)로 취급
+        p.createdAt, p.sortOrder
       FROM Project p 
       LEFT JOIN Category c ON p.categoryId = c.id
       WHERE 1=1

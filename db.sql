@@ -89,3 +89,5 @@ ADD COLUMN `isUpdated` TINYINT(1) DEFAULT 0;
 
 -- (선택사항) 만약 언제 수정되었는지 시간까지 저장하고 싶다면 아래 컬럼도 추가하세요.
 -- ALTER TABLE `comment` ADD COLUMN `updatedAt` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp();
+
+ALTER TABLE Category ADD COLUMN isVisible TINYINT(1) DEFAULT 1;
