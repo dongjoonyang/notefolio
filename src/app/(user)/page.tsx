@@ -1,13 +1,19 @@
 export const dynamic = 'force-dynamic';
 
-// src/app/page.tsx
 import Link from "next/link";
-import { recordVisit } from "@/lib/visitor"; // 👈 방문 기록 함수 불러오기
+import { recordVisit } from "@/lib/visitor";
+import { redirect } from "next/navigation"; // 👈 추가
 
 export default async function IntroPage() {
-  // 💡 서버 컴포넌트이므로 페이지가 로드될 때 서버에서 즉시 실행됩니다.
+  // 1. 서버에서 방문 기록을 먼저 수행합니다.
   await recordVisit();
 
+  // 2. 기록 후 즉시 /all 페이지로 보냅니다. 
+  // 디자인 코드보다 위에 배치해서 깜빡임을 최소화합니다.
+  redirect("/all");
+
+  // 💡 아래 디자인 코드는 그대로 보존됩니다. 
+  // 나중에 인트로를 쓰고 싶을 때 위의 redirect("/all")만 지우거나 주석처리 하세요.
   return (
     <main className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
       <h1 className="text-6xl font-black tracking-tighter mb-6">
