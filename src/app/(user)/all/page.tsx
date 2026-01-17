@@ -110,7 +110,7 @@ function ProjectListContent() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
         <h1 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
-          {categoryParam === "all" ? "Archive" : categoryParam}
+          {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
         <div className="relative w-full md:w-80">

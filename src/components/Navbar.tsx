@@ -78,7 +78,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           <Link href="/" className="font-black text-xl tracking-tighter z-[70] text-zinc-900 dark:text-zinc-50">Behance</Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
-            <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>ALL</Link>
+            <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
             {/* 💡 노출 설정(isVisible === 1)된 카테고리만 렌더링 */}
             {categories
               ?.filter((cat: any) => Number(cat.isVisible) !== 0)
@@ -120,7 +120,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
             className="fixed inset-0 bg-white dark:bg-zinc-950 z-[65] lg:hidden flex flex-col p-10 pt-24"
           >
             <div className="flex flex-col gap-2">
-              <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>ALL</Link>
+              <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
               {/* 💡 모바일 메뉴에서도 노출 설정된 것만 필터링 */}
               {categories
                 ?.filter((cat: any) => Number(cat.isVisible) !== 0)
