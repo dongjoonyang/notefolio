@@ -4,6 +4,7 @@ import { pool } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { del } from '@vercel/blob';
+import { headers } from "next/headers"; // 💡 IP 조회를 위해 추가
 
 // 1. 프로젝트 생성
 export async function createProject(formData: FormData) {
@@ -11,7 +12,6 @@ export async function createProject(formData: FormData) {
   const description = formData.get("description");
   const categoryId = formData.get("categoryId");
   const thumbnail = formData.get("thumbnail");
-  // 💡 [추가] 가시성 데이터 가져오기 (기본값 1)
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
 
   try {
@@ -36,14 +36,12 @@ export async function updateProject(id: number, formData: FormData) {
   const description = formData.get("description") as string;
   const categoryId = formData.get("categoryId");
   const newThumbnail = formData.get("thumbnail") as string;
-  // 💡 [추가] 가시성 데이터 가져오기
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
 
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
 
-    // 🔍 1. 기존 데이터 조회
     const [rows]: any = await pool.query(
       "SELECT thumbnail, description FROM Project WHERE id = ?",
       [id]
@@ -73,7 +71,6 @@ export async function updateProject(id: number, formData: FormData) {
       }
     }
 
-    // 2. DB 업데이트 (isVisible 컬럼 추가)
     await pool.query(
       "UPDATE Project SET title = ?, description = ?, categoryId = ?, thumbnail = ?, isVisible = ? WHERE id = ?",
       [title, description, categoryId, newThumbnail, isVisible, id]
@@ -92,7 +89,7 @@ export async function updateProject(id: number, formData: FormData) {
   redirect("/admin/projects");
 }
 
-// 3. 프로젝트 삭제 (기존과 동일)
+// 3. 프로젝트 삭제
 export async function deleteProject(id: number) {
   try {
     const [rows]: any = await pool.query(
@@ -135,14 +132,13 @@ export async function deleteProject(id: number) {
   }
 }
 
-// 4. 프로젝트 일괄 삭제 (기존 deleteProject 로직 활용)
+// 4. 프로젝트 일괄 삭제
 export async function deleteMultipleProjects(ids: number[]) {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
     const urlRegex = /https:\/\/[a-z0-9]+\.public\.blob\.vercel-storage\.com\/[^"'\s>]+/g;
 
     for (const id of ids) {
-      // 각 프로젝트의 이미지/썸네일 삭제 로직 (기존 삭제 로직 재사용)
       const [rows]: any = await pool.query(
         "SELECT thumbnail, description FROM Project WHERE id = ?",
         [id]
@@ -161,7 +157,6 @@ export async function deleteMultipleProjects(ids: number[]) {
       }
     }
 
-    // DB에서 선택된 ID들 삭제
     await pool.query("DELETE FROM Project WHERE id IN (?)", [ids]);
 
     revalidatePath("/admin/projects");
@@ -172,5 +167,67 @@ export async function deleteMultipleProjects(ids: number[]) {
   } catch (error) {
     console.error("Batch Delete Error:", error);
     return { success: false, message: "일부 프로젝트 삭제 중 오류가 발생했습니다." };
+  }
+}
+
+/**
+ * 5. 프로젝트 좋아요 토글 (IP 기반)
+ */
+export async function toggleProjectLike(projectId: number) {
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";
+
+  try {
+    const [rows]: any = await pool.query(
+      "SELECT id FROM ProjectLike WHERE projectId = ? AND ipAddress = ?",
+      [projectId, ip]
+    );
+
+    if (rows && rows.length > 0) {
+      await pool.query(
+        "DELETE FROM ProjectLike WHERE projectId = ? AND ipAddress = ?",
+        [projectId, ip]
+      );
+      revalidatePath(`/projects/${projectId}`);
+      return { success: true, action: "unliked" };
+    } else {
+      await pool.query(
+        "INSERT INTO ProjectLike (projectId, ipAddress) VALUES (?, ?)",
+        [projectId, ip]
+      );
+      revalidatePath(`/projects/${projectId}`);
+      return { success: true, action: "liked" };
+    }
+  } catch (error) {
+    console.error("Like Toggle Error:", error);
+    return { success: false, message: "좋아요 처리 중 오류가 발생했습니다." };
+  }
+}
+
+/**
+ * 6. 좋아요 상태 및 개수 가져오기
+ */
+export async function getLikeStatus(projectId: number) {
+  const headerList = await headers();
+  const ip = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";
+
+  try {
+    const [countRows]: any = await pool.query(
+      "SELECT COUNT(*) as count FROM ProjectLike WHERE projectId = ?",
+      [projectId]
+    );
+    
+    const [myLikeRows]: any = await pool.query(
+      "SELECT id FROM ProjectLike WHERE projectId = ? AND ipAddress = ?",
+      [projectId, ip]
+    );
+
+    return {
+      count: countRows[0].count,
+      isLiked: myLikeRows && myLikeRows.length > 0
+    };
+  } catch (error) {
+    console.error("Get Like Status Error:", error);
+    return { count: 0, isLiked: false };
   }
 }

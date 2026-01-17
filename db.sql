@@ -92,3 +92,13 @@ ADD COLUMN `isUpdated` TINYINT(1) DEFAULT 0;
 
 ALTER TABLE Category ADD COLUMN isVisible TINYINT(1) DEFAULT 1;
 ALTER TABLE Project ADD COLUMN isVisible TINYINT(1) DEFAULT 1;
+
+
+-- 좋아요 기능
+CREATE TABLE ProjectLike (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    projectId INT NOT NULL,
+    ipAddress VARCHAR(45), -- 로그인 기능이 없다면 IP로 중복 방지
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (projectId) REFERENCES Project(id) ON DELETE CASCADE
+);

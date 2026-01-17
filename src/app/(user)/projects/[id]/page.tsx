@@ -83,8 +83,12 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </aside>
 
         <div className="w-full py-16">
-          {/* ✅ ContentView 내부의 isLoading 상태와 연동하여 로딩 스피너가 표시됩니다. */}
-          <ContentView html={project.description} loadingOverlay={<LoadingOverlay />} />
+          {/* ✅ [수정] projectId를 ContentView에 전달하여 좋아요/공유 기능을 활성화합니다. */}
+          <ContentView 
+            html={project.description} 
+            projectId={project.id} 
+            loadingOverlay={<LoadingOverlay />} 
+          />
           
           <div className="mt-24">
             <CommentSection projectId={id} isAdmin={isAdmin} />
