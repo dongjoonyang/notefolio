@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
+// 💡 좋아요와 댓글 아이콘을 위해 추가
+import { Heart, MessageCircle } from "lucide-react";
 
 // ✅ 로딩 오버레이 컴포넌트
 function LoadingOverlay() {
@@ -132,7 +134,6 @@ function ProjectListContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* 💡 [수정] 카테고리 가시성과 프로젝트 가시성을 동시에 체크하여 필터링 */}
         {projects
           .filter((project) => 
             Number(project.categoryIsVisible) !== 0 && 
@@ -148,10 +149,27 @@ function ProjectListContent() {
                 {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
               </div>
               <div className="p-6">
-                <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
-                  {project.categoryName || "Mixed"}
-                </span>
-                <h2 className="text-xl font-bold mt-3 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
+                {/* 💡 카테고리와 카운트 정보를 한 줄에 배치 */}
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
+                    {project.categoryName || "Mixed"}
+                  </span>
+                  
+                  <div className="flex items-center gap-3 text-slate-400 dark:text-zinc-500">
+                    {/* 좋아요 수 */}
+                    <div className="flex items-center gap-1">
+                      <Heart size={12} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
+                      <span className="text-[11px] font-bold">{project.likeCount || 0}</span>
+                    </div>
+                    {/* 댓글 수 */}
+                    <div className="flex items-center gap-1">
+                      <MessageCircle size={12} />
+                      <span className="text-[11px] font-bold">{project.commentCount || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-bold mt-1 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
                   {project.title}
                 </h2>
                 <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
