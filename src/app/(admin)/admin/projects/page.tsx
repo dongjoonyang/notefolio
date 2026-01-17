@@ -1,7 +1,7 @@
 import { pool } from "@/lib/db";
 import Link from "next/link";
 import DeleteButton from "@/components/DeleteButton";
-import Image from "next/image"; // ✅ 이미지 컴포넌트 추가
+import Image from "next/image";
 
 export default async function AdminProjectsPage({
   searchParams,
@@ -16,11 +16,10 @@ export default async function AdminProjectsPage({
   const searchTerm = q || "";
   const categoryId = category || "";
 
-  // 1. 전체 프로젝트 개수
+  // [기존 데이터 로직 유지]
   const [allCountRes]: any = await pool.query("SELECT COUNT(*) as count FROM Project");
   const absoluteTotal = allCountRes[0].count;
 
-  // 2. 카테고리별 프로젝트 개수 (sortOrder 기준 정렬)
   const [categoryStats]: any = await pool.query(`
     SELECT c.id, c.name, COUNT(p.id) as projectCount 
     FROM Category c 
@@ -29,13 +28,11 @@ export default async function AdminProjectsPage({
     ORDER BY c.sortOrder ASC
   `);
 
-  // 3. 미분류 프로젝트 개수
   const [noCategoryRes]: any = await pool.query(`
     SELECT COUNT(*) as count FROM Project WHERE categoryId IS NULL
   `);
   const uncategorizedCount = noCategoryRes[0].count;
 
-  // 💡 [리스트 조회 섹션]
   let countQuery = "SELECT COUNT(*) as count FROM Project WHERE 1=1";
   let dataQuery = `
     SELECT p.*, c.name as categoryName 
@@ -61,31 +58,30 @@ export default async function AdminProjectsPage({
   const filteredTotal = totalResult[0].count; 
   const totalPages = Math.ceil(filteredTotal / limit);
 
-  // 최신순 정렬 및 페이징
   dataQuery += " ORDER BY p.createdAt DESC LIMIT ? OFFSET ?";
   const [projects]: any = await pool.query(dataQuery, [...queryParams, limit, offset]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      {/* 헤더 섹션 */}
-      <div className="flex justify-between items-center mb-8">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      {/* 헤더 섹션 - 모바일에서 세로 나열 */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold font-sans">프로젝트 관리</h1>
-          <p className="text-sm text-gray-500 mt-1">데이터 현황을 파악하고 관리하세요.</p>
+          <h1 className="text-xl md:text-2xl font-bold font-sans">프로젝트 관리</h1>
+          <p className="text-xs md:text-sm text-gray-500 mt-1">데이터 현황을 파악하고 관리하세요.</p>
         </div>
         <Link 
           href="/admin/projects/new" 
-          className="bg-black text-white px-5 py-2.5 rounded-xl hover:bg-zinc-800 transition shadow-sm font-medium text-sm uppercase tracking-tighter"
+          className="w-full sm:w-auto text-center bg-black text-white px-5 py-3 rounded-xl hover:bg-zinc-800 transition shadow-sm font-medium text-sm uppercase tracking-tighter"
         >
           + NEW PROJECT
         </Link>
       </div>
 
-      {/* 📊 1. 요약 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+      {/* 📊 1. 요약 통계 카드 - 가로 스크롤 대응 */}
+      <div className="flex overflow-x-auto pb-4 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8 scrollbar-hide">
         <Link 
           href="/admin/projects"
-          className={`p-4 rounded-2xl border transition shadow-sm ${
+          className={`shrink-0 w-[120px] md:w-auto p-4 rounded-2xl border transition shadow-sm ${
             !categoryId ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
           }`}
         >
@@ -97,7 +93,7 @@ export default async function AdminProjectsPage({
           <Link 
             key={stat.id}
             href={`/admin/projects?category=${stat.id}`}
-            className={`p-4 rounded-2xl border transition shadow-sm ${
+            className={`shrink-0 w-[120px] md:w-auto p-4 rounded-2xl border transition shadow-sm ${
               categoryId === String(stat.id) ? "border-black bg-slate-50 text-black" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
             }`}
           >
@@ -109,13 +105,13 @@ export default async function AdminProjectsPage({
         ))}
       </div>
 
-      {/* 🔍 2. 필터 바 */}
-      <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm flex flex-wrap gap-3 items-center">
-        <form action="/admin/projects" method="GET" className="flex flex-1 gap-3">
+      {/* 🔍 2. 필터 바 - 모바일에서 한 줄씩 배치 */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
+        <form action="/admin/projects" method="GET" className="flex flex-col md:flex-row gap-3">
           <select 
             name="category" 
             defaultValue={categoryId}
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-black outline-none bg-gray-50 cursor-pointer font-bold"
+            className="w-full md:w-48 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none bg-gray-50 cursor-pointer font-bold"
           >
             <option value="">ALL CATEGORIES</option>
             {categoryStats.map((cat: any) => (
@@ -128,18 +124,20 @@ export default async function AdminProjectsPage({
             name="q" 
             defaultValue={searchTerm}
             placeholder="SEARCH TITLE..." 
-            className="border border-gray-200 rounded-xl px-4 py-2 text-sm flex-1 focus:ring-2 focus:ring-black outline-none bg-gray-50 font-medium"
+            className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none bg-gray-50 font-medium"
           />
 
-          <button className="bg-black text-white px-6 py-2 rounded-xl text-xs hover:bg-zinc-800 transition font-black uppercase">
+          <button className="w-full md:w-auto bg-black text-white px-8 py-2.5 rounded-xl text-xs hover:bg-zinc-800 transition font-black uppercase">
             Search
           </button>
         </form>
       </div>
 
-      {/* 📄 3. 리스트 테이블 */}
+      {/* 📄 3. 리스트 섹션 (테이블/카드 스위칭) */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <table className="w-full text-left">
+        
+        {/* 🖥️ 데스크톱 테이블 (md 이상에서만 보임) */}
+        <table className="hidden md:table w-full text-left">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
               <th className="px-6 py-4">Thumbnail</th>
@@ -150,56 +148,87 @@ export default async function AdminProjectsPage({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {projects.length > 0 ? (
-              projects.map((project: any) => (
-                <tr key={project.id} className="hover:bg-gray-50/80 transition-colors">
-                  <td className="px-6 py-4">
-                    {/* ✅ 썸네일 미리보기 추가 */}
-                    <div className="relative w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-100">
-                      {project.thumbnail ? (
-                        <Image src={project.thumbnail} alt="thumb" fill className="object-cover" />
-                      ) : (
-                        <div className="flex items-center justify-center h-full text-[10px] text-slate-300 font-bold">NO IMG</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-bold text-slate-800">{project.title}</td>
-                  <td className="px-6 py-4">
-                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${
-                      project.categoryName ? "bg-slate-100 text-slate-600" : "bg-orange-50 text-orange-600"
-                    }`}>
-                      {project.categoryName || "UNCATEGORIZED"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-[11px] text-slate-400 font-mono">
-                    {new Date(project.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right flex justify-end gap-6 items-center h-20">
-                    <Link 
-                      href={`/admin/projects/edit/${project.id}`} 
-                      className="text-slate-400 hover:text-black text-[11px] font-black transition uppercase tracking-widest"
-                    >
-                      EDIT
-                    </Link>
-                    {/* ✅ 삭제 시 스토리지 파일도 지워주는 DeleteButton */}
-                    <DeleteButton id={project.id} />
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={5} className="px-6 py-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
-                  No results found.
+            {projects.map((project: any) => (
+              <tr key={project.id} className="hover:bg-gray-50/80 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="relative w-12 h-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-100">
+                    {project.thumbnail ? (
+                      <Image src={project.thumbnail} alt="thumb" fill className="object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[10px] text-slate-300 font-bold">NO IMG</div>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 font-bold text-slate-800">{project.title}</td>
+                <td className="px-6 py-4">
+                  <span className={`text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${
+                    project.categoryName ? "bg-slate-100 text-slate-600" : "bg-orange-50 text-orange-600"
+                  }`}>
+                    {project.categoryName || "UNCATEGORIZED"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-[11px] text-slate-400 font-mono">
+                  {new Date(project.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 text-right flex justify-end gap-6 items-center h-20">
+                  <Link 
+                    href={`/admin/projects/edit/${project.id}`} 
+                    className="text-slate-400 hover:text-black text-[11px] font-black transition uppercase tracking-widest"
+                  >
+                    EDIT
+                  </Link>
+                  <DeleteButton id={project.id} />
                 </td>
               </tr>
-            )}
+            ))}
           </tbody>
         </table>
+
+        {/* 📱 모바일용 카드 리스트 (md 미만에서만 보임) */}
+        <div className="md:hidden divide-y divide-gray-100">
+          {projects.length > 0 ? (
+            projects.map((project: any) => (
+              <div key={project.id} className="p-5 flex flex-col gap-4">
+                <div className="flex gap-4 items-center">
+                  <div className="relative w-16 h-16 bg-slate-100 rounded-xl overflow-hidden shrink-0 border border-slate-100">
+                    {project.thumbnail ? (
+                      <Image src={project.thumbnail} alt="thumb" fill className="object-cover" />
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-[10px] text-slate-300 font-bold">NO IMG</div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1 truncate">
+                      {project.categoryName || "UNCATEGORIZED"}
+                    </p>
+                    <h4 className="font-bold text-slate-800 truncate leading-tight">{project.title}</h4>
+                    <p className="text-[10px] text-slate-400 mt-1">{new Date(project.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Link 
+                    href={`/admin/projects/edit/${project.id}`} 
+                    className="flex-1 bg-gray-50 text-slate-600 text-center py-2.5 rounded-xl text-[11px] font-black uppercase border border-gray-100 shadow-sm"
+                  >
+                    EDIT
+                  </Link>
+                  <div className="flex-1">
+                    <DeleteButton id={project.id} />
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-20 text-center text-slate-300 font-black uppercase text-xs tracking-widest">
+              No results found.
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 🔢 4. 페이징 섹션 (기존과 동일) */}
+      {/* 🔢 4. 페이징 섹션 - 모바일 대응 */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-10 gap-2">
+        <div className="flex flex-wrap justify-center mt-10 gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
