@@ -2,6 +2,7 @@ import { pool } from "@/lib/db";
 import Link from "next/link";
 import DeleteButton from "@/components/DeleteButton";
 import Image from "next/image";
+import ProjectVisibleToggle from "@/components/ProjectVisibleToggle";
 
 export default async function AdminProjectsPage({
   searchParams,
@@ -16,7 +17,7 @@ export default async function AdminProjectsPage({
   const searchTerm = q || "";
   const categoryId = category || "";
 
-  // 💡 쿼리 빌드
+  // 1. 쿼리 빌드
   let countQuery = "SELECT COUNT(*) as count FROM Project WHERE 1=1";
   let dataQuery = `
     SELECT p.*, c.name as categoryName 
@@ -38,7 +39,7 @@ export default async function AdminProjectsPage({
     queryParams.push(categoryId);
   }
 
-  // 🚀 [핵심 수정] 모든 DB 쿼리를 동시에(병렬) 실행하여 속도 최적화
+  // 2. 데이터 병렬 로드
   const [
     [allCountRes], 
     [categoryStats], 
@@ -77,7 +78,7 @@ export default async function AdminProjectsPage({
         </Link>
       </div>
 
-      {/* 📊 1. 요약 통계 카드 */}
+      {/* 통계 카드 */}
       <div className="flex overflow-x-auto pb-4 md:pb-0 md:grid md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8 scrollbar-hide">
         <Link 
           href="/admin/projects"
@@ -105,7 +106,7 @@ export default async function AdminProjectsPage({
         ))}
       </div>
 
-      {/* 🔍 2. 필터 바 */}
+      {/* 필터 바 */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 mb-6 shadow-sm">
         <form action="/admin/projects" method="GET" className="flex flex-col md:flex-row gap-3">
           <select 
@@ -118,7 +119,6 @@ export default async function AdminProjectsPage({
               <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
           </select>
-
           <input 
             type="text" 
             name="q" 
@@ -126,21 +126,21 @@ export default async function AdminProjectsPage({
             placeholder="SEARCH TITLE..." 
             className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none bg-gray-50 font-medium"
           />
-
           <button className="w-full md:w-auto bg-black text-white px-8 py-2.5 rounded-xl text-xs hover:bg-zinc-800 transition font-black uppercase">
             Search
           </button>
         </form>
       </div>
 
-      {/* 📄 3. 리스트 섹션 */}
+      {/* 리스트 섹션 */}
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
-        <table className="hidden md:table w-full text-left">
+        <table className="hidden md:table w-full text-left border-collapse">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100 text-slate-400 text-[10px] font-black uppercase tracking-[0.15em]">
               <th className="px-6 py-4">Thumbnail</th>
               <th className="px-6 py-4">Project Title</th>
               <th className="px-6 py-4">Category</th>
+              <th className="px-6 py-4">Visible</th>
               <th className="px-6 py-4">Date</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
@@ -165,24 +165,29 @@ export default async function AdminProjectsPage({
                     {project.categoryName || "UNCATEGORIZED"}
                   </span>
                 </td>
+                <td className="px-6 py-4">
+                  <ProjectVisibleToggle id={project.id} initialVisible={project.isVisible} />
+                </td>
                 <td className="px-6 py-4 text-[11px] text-slate-400 font-mono">
                   {new Date(project.createdAt).toLocaleDateString()}
                 </td>
-                <td className="px-6 py-4 text-right flex justify-end gap-6 items-center h-20">
-                  <Link 
-                    href={`/admin/projects/edit/${project.id}`} 
-                    className="text-slate-400 hover:text-black text-[11px] font-black transition uppercase tracking-widest"
-                  >
-                    EDIT
-                  </Link>
-                  <DeleteButton id={project.id} />
+                <td className="px-6 py-4 text-right">
+                  <div className="flex justify-end gap-6 items-center">
+                    <Link 
+                      href={`/admin/projects/edit/${project.id}`} 
+                      className="text-slate-400 hover:text-black text-[11px] font-black transition uppercase tracking-widest"
+                    >
+                      EDIT
+                    </Link>
+                    <DeleteButton id={project.id} />
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        {/* 모바일용 카드 리스트 */}
+        {/* 모바일 리스트 */}
         <div className="md:hidden divide-y divide-gray-100">
           {projects.length > 0 ? (
             projects.map((project: any) => (
@@ -196,9 +201,12 @@ export default async function AdminProjectsPage({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1 truncate">
-                      {project.categoryName || "UNCATEGORIZED"}
-                    </p>
+                    <div className="flex justify-between items-start mb-1">
+                      <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest truncate">
+                        {project.categoryName || "UNCATEGORIZED"}
+                      </p>
+                      <ProjectVisibleToggle id={project.id} initialVisible={project.isVisible} />
+                    </div>
                     <h4 className="font-bold text-slate-800 truncate leading-tight">{project.title}</h4>
                     <p className="text-[10px] text-slate-400 mt-1">{new Date(project.createdAt).toLocaleDateString()}</p>
                   </div>
@@ -224,7 +232,7 @@ export default async function AdminProjectsPage({
         </div>
       </div>
 
-      {/* 🔢 4. 페이징 */}
+      {/* 페이징 */}
       {totalPages > 1 && (
         <div className="flex flex-wrap justify-center mt-10 gap-2">
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (

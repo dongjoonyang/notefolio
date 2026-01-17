@@ -57,3 +57,26 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// --- 💡 [새로 추가] 노출 여부 수정을 위한 PUT 함수 ---
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const { isVisible } = body; // 프론트에서 보낼 0 또는 1
+
+    // isVisible 값만 선택적으로 업데이트합니다.
+    await pool.query(
+      "UPDATE Project SET isVisible = ? WHERE id = ?",
+      [isVisible, id]
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error("🚨 PUT 에러:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

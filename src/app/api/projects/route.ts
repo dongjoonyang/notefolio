@@ -7,7 +7,8 @@ import { pool } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { title, content, categoryName, thumbnail } = body;
+    // 💡 isVisible을 추가로 받습니다.
+    const { title, content, categoryName, thumbnail, isVisible } = body;
 
     if (!title || !categoryName) {
       return NextResponse.json({ error: "제목과 카테고리는 필수입니다." }, { status: 400 });
@@ -24,13 +25,13 @@ export async function POST(request: Request) {
 
     const categoryId = categories[0].id;
 
-    // 새 글은 가장 앞에 오도록 설정 (최소 sortOrder - 1)
     const [minOrderResult]: any = await pool.query("SELECT MIN(sortOrder) as minOrder FROM Project");
     const newOrder = (minOrderResult[0].minOrder !== null ? minOrderResult[0].minOrder : 0) - 1;
 
+    // 💡 INSERT 문에 isVisible 컬럼과 값을 추가했습니다.
     const [result]: any = await pool.query(
-      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder) VALUES (?, ?, ?, ?, ?)",
-      [title, content, categoryId, thumbnail, newOrder]
+      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible) VALUES (?, ?, ?, ?, ?, ?)",
+      [title, content, categoryId, thumbnail, newOrder, isVisible ?? 1] // 기본값 1
     );
 
     return NextResponse.json({ success: true, id: result.insertId });
@@ -50,12 +51,12 @@ export async function GET(request: Request) {
   const offset = (page - 1) * limit;
 
   try {
-    // api/projects/route.ts 내 GET 함수 쿼리 부분 수정
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
+        p.isVisible, -- 💡 프로젝트 자체의 노출 여부 추가
         c.name as categoryName, 
-        IFNULL(c.isVisible, 1) as categoryIsVisible, -- 💡 NULL인 경우 기본값 1(노출)로 취급
+        IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder
       FROM Project p 
       LEFT JOIN Category c ON p.categoryId = c.id
@@ -73,7 +74,6 @@ export async function GET(request: Request) {
       params.push(searchKeyword, searchKeyword);
     }
 
-    // ✨ 정렬 고정: 관리자가 설정한 순서(sortOrder)가 무조건 1순위
     query += ` ORDER BY p.sortOrder ASC, p.createdAt DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 

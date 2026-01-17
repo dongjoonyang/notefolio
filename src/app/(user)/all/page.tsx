@@ -106,7 +106,6 @@ function ProjectListContent() {
   return (
     <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
-      {/* ✅ 로딩 중일 때 오버레이 표시 */}
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -133,9 +132,12 @@ function ProjectListContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* 💡 카테고리 노출 상태가 0(미노출)인 프로젝트는 필터링하여 숨김 */}
+        {/* 💡 [수정] 카테고리 가시성과 프로젝트 가시성을 동시에 체크하여 필터링 */}
         {projects
-          .filter((project) => Number(project.categoryIsVisible) !== 0)
+          .filter((project) => 
+            Number(project.categoryIsVisible) !== 0 && 
+            Number(project.isVisible) !== 0
+          )
           .map((project, index) => (
             <Link 
               href={`/projects/${project.id}`} 
@@ -171,7 +173,7 @@ function ProjectListContent() {
         ))}
       </div>
 
-      {!loading && projects.length === 0 && (
+      {!loading && projects.filter(p => Number(p.categoryIsVisible) !== 0 && Number(p.isVisible) !== 0).length === 0 && (
         <div className="py-24 text-center text-slate-300 dark:text-zinc-700 font-bold uppercase tracking-widest border border-dashed border-slate-100 dark:border-zinc-800 rounded-3xl">
           No Results Found
         </div>

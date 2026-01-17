@@ -91,3 +91,4 @@ ADD COLUMN `isUpdated` TINYINT(1) DEFAULT 0;
 -- ALTER TABLE `comment` ADD COLUMN `updatedAt` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp();
 
 ALTER TABLE Category ADD COLUMN isVisible TINYINT(1) DEFAULT 1;
+ALTER TABLE Project ADD COLUMN isVisible TINYINT(1) DEFAULT 1;
