@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageSquare, User, Lock, Send, Trash2, CornerDownRight } from "lucide-react";
+import { MessageSquare, User, Lock, Trash2, CornerDownRight } from "lucide-react";
 
 export default function CommentSection({ projectId, isAdmin }: { projectId: string; isAdmin: boolean }) {
   const [comments, setComments] = useState<any[]>([]);
@@ -155,9 +155,10 @@ export default function CommentSection({ projectId, isAdmin }: { projectId: stri
                   </div>
                   <p className={`text-sm leading-relaxed ${Number(comment.isAdmin) === 1 ? "text-zinc-700 dark:text-zinc-300" : "text-gray-600 dark:text-zinc-400"}`}>{comment.content}</p>
                 </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                  <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-xs text-gray-500 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-200 font-medium">답글</button>
-                  <button onClick={() => handleDelete(comment.id)} className="text-gray-400 dark:text-zinc-600 hover:text-red-500"><Trash2 size={16} /></button>
+                {/* 🚀 PC/모바일 모두에서 항상 보이도록 수정 (opacity-0 md:group-hover 제거) */}
+                <div className="flex gap-4 items-center opacity-100 transition-all">
+                  <button onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)} className="text-xs text-gray-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 font-bold uppercase tracking-tighter">답글</button>
+                  <button onClick={() => handleDelete(comment.id)} className="text-gray-400 dark:text-zinc-600 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
                 </div>
               </div>
               
@@ -195,7 +196,7 @@ export default function CommentSection({ projectId, isAdmin }: { projectId: stri
             </div>
 
             {comment.children && comment.children.map((child: any) => (
-              <div key={child.id} className="flex gap-3 ml-10 group">
+              <div key={child.id} className="flex gap-3 ml-6 md:ml-10 group">
                 <CornerDownRight className="text-gray-300 dark:text-zinc-700 mt-2 flex-shrink-0" size={16} />
                 <div className={`flex-1 p-4 rounded-2xl transition-all ${Number(child.isAdmin) === 1 ? "bg-zinc-50/50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800" : "bg-gray-50/50 dark:bg-zinc-900/30"}`}>
                   <div className="flex justify-between">
@@ -204,7 +205,13 @@ export default function CommentSection({ projectId, isAdmin }: { projectId: stri
                       {Number(child.isAdmin) === 1 && <span className="text-[9px] bg-zinc-800 dark:bg-zinc-100 text-white dark:text-zinc-950 px-1.5 py-0.5 rounded font-bold uppercase">ADMIN</span>}
                       <span className="text-[10px] text-gray-400 dark:text-zinc-500">{new Date(child.createdAt).toLocaleDateString()}</span>
                     </div>
-                    <button onClick={() => handleDelete(child.id)} className="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-zinc-600 hover:text-red-500 transition-all"><Trash2 size={14} /></button>
+                    {/* 🚀 자식 댓글 삭제 버튼도 항상 노출 */}
+                    <button 
+                      onClick={() => handleDelete(child.id)} 
+                      className="opacity-100 text-gray-400 dark:text-zinc-600 hover:text-red-500 transition-all p-1"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                   <p className={`text-sm ${Number(child.isAdmin) === 1 ? "text-zinc-700 dark:text-zinc-300" : "text-gray-600 dark:text-zinc-400"}`}>{child.content}</p>
                 </div>
