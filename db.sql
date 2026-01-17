@@ -81,3 +81,11 @@ CREATE TABLE IF NOT EXISTS `visitorlog` (
 /*!40014 SET FOREIGN_KEY_CHECKS=IFNULL(@OLD_FOREIGN_KEY_CHECKS, 1) */;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40111 SET SQL_NOTES=IFNULL(@OLD_SQL_NOTES, 1) */;
+
+
+-- 1. comment 테이블에 수정 여부를 체크할 컬럼 추가
+ALTER TABLE `comment` 
+ADD COLUMN `isUpdated` TINYINT(1) DEFAULT 0;
+
+-- (선택사항) 만약 언제 수정되었는지 시간까지 저장하고 싶다면 아래 컬럼도 추가하세요.
+-- ALTER TABLE `comment` ADD COLUMN `updatedAt` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp();
