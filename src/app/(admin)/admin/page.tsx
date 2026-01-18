@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import LogoutButton from "@/components/admin/LogoutButton";
-import { FolderKanban, Users, MousePointer2 } from "lucide-react";
+import { FolderKanban, Users, MousePointer2, Loader2, ChevronRight } from "lucide-react";
 
 interface RecentProject {
   id: number;
@@ -14,11 +14,10 @@ interface RecentProject {
 export default function AdminMainPage() {
   const router = useRouter();
   
-  // 💡 1. API에서 보내주는 모든 데이터를 담을 수 있게 초기값 수정
   const [stats, setStats] = useState({
     totalProjects: 0,
-    todayVisitors: 0,   // 추가
-    totalMessages: 0,    // 추가
+    todayVisitors: 0,
+    totalMessages: 0,
     recentProjects: [] as RecentProject[],
   });
   const [loading, setLoading] = useState(true);
@@ -29,7 +28,6 @@ export default function AdminMainPage() {
         const res = await fetch("/api/admin/stats");
         if (res.ok) {
           const data = await res.json();
-          // 💡 2. 데이터 구조가 일치하므로 setStats(data)가 정상 작동합니다.
           setStats(data);
         }
       } catch (error) {
@@ -42,82 +40,119 @@ export default function AdminMainPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h1 className="text-2xl font-bold">관리자 대시보드</h1>
-          <p className="text-gray-500">포트폴리오 현황을 한눈에 확인하세요.</p>
-        </div>
-        <LogoutButton />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* 1. 프로젝트 개수 */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 text-blue-600 mb-2">
-            <FolderKanban size={20} />
-            <span className="font-medium text-gray-700">프로젝트</span>
-          </div>
-          <p className="text-3xl font-bold">{loading ? "..." : `${stats.totalProjects}개`}</p>
-        </div>
-
-        {/* 2. 오늘 방문자 (실제 데이터 연동) */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 text-green-600 mb-2">
-            <MousePointer2 size={20} />
-            <span className="font-medium text-gray-700">오늘 방문자</span>
-          </div>
-          <p className="text-3xl font-bold">
-            {loading ? "..." : `${stats.todayVisitors ?? 0}명`}
-          </p>
-        </div>
-
-        {/* 3. 문의 메시지 (실제 데이터 연동) */}
-        <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 text-purple-600 mb-2">
-            <Users size={20} />
-            <span className="font-medium text-gray-700">문의 메시지</span>
-          </div>
-          <p className="text-3xl font-bold">
-            {loading ? "..." : `${stats.totalMessages ?? 0}건`}
-          </p>
-        </div>
-      </div>
-
-      {/* 4. 최근 활동 안내 구역 */}
-      <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm min-h-[300px]">
-        <h3 className="font-bold mb-4 text-gray-700">최근 등록된 프로젝트</h3>
+    /**
+     * 💡 여백 최적화:
+     * pt-8 md:pt-12: 너무 길었던 상단 여백을 프로젝트 관리 페이지와 유사한 수준으로 축소
+     * max-w-6xl: 너비를 조금 더 넓혀서(5xl -> 6xl) 시원하게 배치
+     */
+    <div className="w-full pt-8 md:pt-12 px-6 md:px-8 pb-16">
+      <div className="max-w-6xl mx-auto space-y-8">
         
-        {loading ? (
-          <p className="text-center text-gray-400 mt-10">데이터 로딩 중...</p>
-        ) : stats.recentProjects && stats.recentProjects.length > 0 ? (
-          <div className="space-y-3">
-            {stats.recentProjects.map((project) => (
-              <div key={project.id} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors">
-                <span className="font-medium">{project.title}</span>
-                <span className="text-xs text-gray-400">
-                  {new Date(project.createdAt).toLocaleDateString()}
-                </span>
+        {/* 상단 헤더 섹션 */}
+        <div className="flex justify-between items-end pb-4 border-b border-slate-100">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight uppercase">Dashboard</h1>
+            <p className="text-slate-500 text-xs md:text-sm mt-1 font-medium uppercase tracking-tight">Portfolio Overview</p>
+          </div>
+          <LogoutButton />
+        </div>
+
+        {/* 통계 카드 그리드 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* 1. 프로젝트 */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm transition-all hover:border-slate-300">
+            <div className="flex items-center gap-3 text-blue-600 mb-4">
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-500">
+                <FolderKanban size={18} />
               </div>
-            ))}
-            <button 
-              onClick={() => router.push('/admin/projects')}
-              className="w-full mt-4 py-2 text-sm text-gray-500 hover:text-blue-600 transition-colors"
-            >
-              전체 보기 →
-            </button>
+              <span className="font-black text-[10px] text-slate-400 uppercase tracking-widest">Projects</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-slate-900">{loading ? "..." : stats.totalProjects}</span>
+              <span className="text-xs font-bold text-slate-400 ml-1">ITEMS</span>
+            </div>
           </div>
-        ) : (
-          <div className="text-center mt-10">
-            <p className="text-gray-400">최근 업데이트된 프로젝트가 없습니다.</p>
-            <button 
-              onClick={() => router.push('/admin/projects/new')}
-              className="mt-4 text-blue-600 hover:underline font-medium"
-            >
-              새 프로젝트 등록하기 →
-            </button>
+
+          {/* 2. 오늘 방문자 */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm transition-all hover:border-slate-300">
+            <div className="flex items-center gap-3 text-emerald-600 mb-4">
+              <div className="p-2 bg-emerald-50 rounded-lg text-emerald-500">
+                <MousePointer2 size={18} />
+              </div>
+              <span className="font-black text-[10px] text-slate-400 uppercase tracking-widest">Visitors</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-slate-900">{loading ? "..." : (stats.todayVisitors ?? 0)}</span>
+              <span className="text-xs font-bold text-slate-400 ml-1">TODAY</span>
+            </div>
           </div>
-        )}
+
+          {/* 3. 문의 메시지 */}
+          <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm transition-all hover:border-slate-300">
+            <div className="flex items-center gap-3 text-purple-600 mb-4">
+              <div className="p-2 bg-purple-50 rounded-lg text-purple-500">
+                <Users size={18} />
+              </div>
+              <span className="font-black text-[10px] text-slate-400 uppercase tracking-widest">Messages</span>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-black text-slate-900">{loading ? "..." : (stats.totalMessages ?? 0)}</span>
+              <span className="text-xs font-bold text-slate-400 ml-1">TOTAL</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 최근 활동 안내 구역 */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-black text-slate-900 uppercase tracking-tight px-1">Recent Activity</h3>
+          
+          <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
+            {loading ? (
+              <div className="p-20 flex flex-col items-center justify-center text-slate-300">
+                <Loader2 className="animate-spin mb-3" size={24} />
+                <p className="text-[10px] font-black uppercase tracking-widest">Loading...</p>
+              </div>
+            ) : stats.recentProjects && stats.recentProjects.length > 0 ? (
+              <div className="flex flex-col">
+                {stats.recentProjects.map((project) => (
+                  <div 
+                    key={project.id} 
+                    className="flex justify-between items-center p-5 border-b last:border-0 border-slate-50 hover:bg-slate-50 transition-colors group cursor-default"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-black transition-all" />
+                      <span className="font-bold text-slate-700 group-hover:text-black transition-colors text-sm">
+                        {project.title}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-5">
+                      <span className="text-[10px] font-bold text-slate-300 uppercase">
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </span>
+                      <ChevronRight size={14} className="text-slate-200 group-hover:text-black transition-all" />
+                    </div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => router.push('/admin/projects')}
+                  className="w-full py-4 text-[10px] font-black text-slate-400 hover:text-black hover:bg-slate-50 transition-all uppercase tracking-widest border-t border-slate-50"
+                >
+                  View All Projects →
+                </button>
+              </div>
+            ) : (
+              <div className="p-20 text-center">
+                <p className="text-slate-400 text-sm font-medium mb-4">최근 등록된 프로젝트가 없습니다.</p>
+                <button 
+                  onClick={() => router.push('/admin/projects/new')}
+                  className="bg-black text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-zinc-800 transition-all"
+                >
+                  Add Project
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

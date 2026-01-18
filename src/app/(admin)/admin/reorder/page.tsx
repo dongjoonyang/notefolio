@@ -83,9 +83,6 @@ export default function ReorderPage() {
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <header className="flex justify-between items-center mb-8 md:mb-10">
         <div>
-          <a href="/admin" className="text-[11px] font-black uppercase tracking-widest text-gray-400 flex items-center gap-1 mb-2">
-            <ArrowLeft size={12}/> Back to Admin
-          </a>
           <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tighter">순서 관리</h1>
         </div>
         {isSaving && (
