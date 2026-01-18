@@ -1,67 +1,50 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import { signIn } from "next-auth/react"; // 클라이언트 컴포넌트용 signIn
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // 클라이언트 사이드 보완 (미들웨어가 놓치는 찰나의 캐시 대응)
-  useEffect(() => {
-    if (document.cookie.includes("admin_session=true")) {
-      router.replace("/admin");
-    } else {
-      setIsLoading(false);
-    }
-  }, [router]);
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (res.ok) {
-      // 로그아웃 전까지 유지되도록 max-age 설정 (예: 7일)
-      document.cookie = "admin_session=true; path=/; max-age=604800";
-      router.refresh();
-      router.replace("/admin");
-    } else {
-      alert("아이디 또는 비밀번호가 틀렸습니다.");
-    }
+  const handleGoogleLogin = async () => {
+    setIsLoggingIn(true);
+    // 구글 로그인을 시작하고, 성공 시 /admin으로 이동합니다.
+    await signIn("google", { callbackUrl: "/admin" });
   };
-
-  if (isLoading) return <div className="min-h-screen bg-gray-100" />; // 리다이렉트 중 폼 노출 방지
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md p-8 bg-white rounded-xl shadow-md">
         <h1 className="text-xl font-bold text-center mb-6">Admin Login</h1>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 border rounded border-gray-300 outline-none focus:ring-2 focus:ring-black"
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded border-gray-300 outline-none focus:ring-2 focus:ring-black"
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <button type="submit" className="w-full bg-black text-white py-2 rounded font-bold hover:bg-gray-800 transition-colors">
-            Login
-          </button>
-        </form>
+        
+        <p className="text-sm text-gray-600 text-center mb-8">
+          관리자 전용 페이지입니다. <br /> 등록된 Google 계정으로 로그인해주세요.
+        </p>
+
+        <button
+          onClick={handleGoogleLogin}
+          disabled={isLoggingIn}
+          className="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
+        >
+          {isLoggingIn ? (
+            <span>로그인 중...</span>
+          ) : (
+            <>
+              <img 
+                src="https://authjs.dev/img/providers/google.svg" 
+                alt="Google" 
+                width={20} 
+                height={20} 
+              />
+              <span>Google 계정으로 로그인</span>
+            </>
+          )}
+        </button>
+
+        {/* 하단 안내 문구 (선택 사항) */}
+        <div className="mt-6 text-center text-xs text-gray-400">
+          권한이 없는 계정은 접근이 제한됩니다.
+        </div>
       </div>
     </div>
   );
