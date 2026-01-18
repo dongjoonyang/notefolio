@@ -16,33 +16,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setIsSidebarOpen(false);
   }, [pathname]);
 
-  // 💡 [수정] 무한 루프 및 중복 호출 해결
-  useEffect(() => {
-    const checkAuthAndRedirect = () => {
-      const hasAdminCookie = document.cookie
-        .split(";")
-        .some((item) => item.trim().startsWith("is_admin="));
-
-      if (!hasAdminCookie) {
-        console.log("관리자 권한 만료 감지: 로그인 페이지로 이동합니다.");
-        router.push("/login"); 
-      }
-    };
-
-    // 1. 실행 즉시 1회 체크
-    checkAuthAndRedirect();
-    
-    // 2. 인터벌 생성
-    const intervalId = setInterval(checkAuthAndRedirect, 2000);
-    
-    // 3. [핵심] Cleanup 함수: 다음 useEffect가 실행되기 전이나 
-    // 컴포넌트가 사라질 때 기존 인터벌을 완전히 제거합니다.
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-    
-    // router와 pathname을 의존성에 넣어 변경 시마다 기존 것을 청소하고 새로 시작하게 합니다.
-  }, [router, pathname]);
+  // 💡 배포 환경에서 document.cookie를 읽지 못해 발생하는 무한 리다이렉트 문제를 해결하기 위해 
+  // 클라이언트 측 쿠키 체크 로직을 제거했습니다. 
+  // 실제 권한 체크는 이미 middleware.ts(서버 사이드)에서 안전하게 처리되고 있습니다.
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-slate-900">
