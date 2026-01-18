@@ -8,21 +8,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
-  // 💡 세션 전략을 jwt로 명시해줍니다.
-  session: { strategy: "jwt" }, 
+  session: { strategy: "jwt" },
   callbacks: {
     async signIn({ user }) {
       return user.email === process.env.ADMIN_EMAIL;
     },
-    // 💡 미들웨어에서 세션을 더 잘 인식하게 돕습니다.
     async jwt({ token, user }) {
       if (user) token.email = user.email;
       return token;
     },
     async session({ session, token }) {
-      if (session.user) session.user.email = token.email as string;
+      if (session.user) {
+        session.user.email = token.email as string;
+      }
       return session;
-    }
+    },
   },
   trustHost: true,
+  secret: process.env.AUTH_SECRET, // 명시적으로 추가
 });
