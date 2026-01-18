@@ -8,13 +8,14 @@ import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
 import { Heart, MessageCircle } from "lucide-react";
 
-// ✅ 로딩 오버레이 컴포넌트
+// 💡 화면 전체를 덮는 Overlay 대신, 투명하게 로딩 아이콘만 띄우거나 
+// 아래에서 스켈레톤이 보일 것이므로 이 컴포넌트는 사실상 필요 없게 됩니다.
+// 하지만 안전을 위해 렉을 유발하던 배경색과 블러만 제거한 버전입니다.
 function LoadingOverlay() {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-all">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-10 h-10 border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin"></div>
-        <p className="text-white dark:text-zinc-100 font-bold tracking-widest uppercase text-[10px]">Loading</p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
+      <div className="flex flex-col items-center gap-4 p-6 rounded-3xl">
+        <div className="w-10 h-10 border-4 border-zinc-200 border-t-zinc-900 dark:border-zinc-700 dark:border-t-zinc-100 rounded-full animate-spin shadow-sm"></div>
       </div>
     </div>
   );
@@ -61,7 +62,6 @@ function ProjectListContent() {
     const targetPage = isReset ? 1 : page;
     
     try {
-      // API 호출 시 showInAll 데이터도 함께 넘어와야 합니다.
       const response = await fetch(
         `/api/projects?page=${targetPage}&limit=6&search=${activeSearch}&category=${categoryParam}&v=${Date.now()}`
       );
@@ -105,27 +105,19 @@ function ProjectListContent() {
     return () => observer.disconnect();
   }, [hasMore, loading, fetchProjects]);
 
-  // --- ✨ 필터링 로직 정의 ---
   const filteredProjects = projects.filter((project) => {
     const isVisible = Number(project.isVisible) !== 0;
     const categoryVisible = Number(project.categoryIsVisible) !== 0;
     const showInAll = Number(project.showInAll) !== 0;
-
-    // 1. 공통: 프로젝트 자체와 카테고리가 Visible 상태여야 함
     if (!isVisible || !categoryVisible) return false;
-
-    // 2. All 페이지일 때만 showInAll 토글 상태를 따름
-    if (categoryParam === "all") {
-      return showInAll;
-    }
-
-    // 3. 특정 카테고리 페이지일 때는 showInAll에 상관없이 보여줌
+    if (categoryParam === "all") return showInAll;
     return true;
   });
 
   return (
     <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
+      {/* 💡 화면을 가리지 않는 로더 (스켈레톤과 함께 보임) */}
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -189,7 +181,8 @@ function ProjectListContent() {
           </Link>
         ))}
 
-        {hasMore && (loading || projects.length === 0) && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
+        {/* --- ✨ 스켈레톤 로직 복구 --- */}
+        {hasMore && loading && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
             <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />
             <div className="p-6 space-y-4">
