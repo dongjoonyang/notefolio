@@ -79,7 +79,8 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
       <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
         <div className="max-w-3xl mx-auto px-6">
-          <BackButton />
+          {/* 프로젝트의 카테고리 이름을 넣어줍니다 */}
+          <BackButton categoryName={project.categoryName} />
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
               {project.categoryName || "Uncategorized"}
