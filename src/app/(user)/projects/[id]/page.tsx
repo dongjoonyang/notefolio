@@ -8,8 +8,8 @@ import ProgressBar from "./ProgressBar";
 import TOC from "./TOC";
 import ContentView from "./ContentView";
 import BackButton from "@/components/BackButton";
+import Image from "next/image"; // ✅ 이미지 사용을 위해 추가
 
-// ✅ 목록 페이지와 통일된 로딩 오버레이 컴포넌트
 function LoadingOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
@@ -27,7 +27,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const cookieStore = await cookies();
   const isAdmin = !!cookieStore.get("admin_session");
 
-  // DB 데이터 호출
+  // 1. 현재 게시글 데이터 호출
   const [rows]: any = await pool.query(`
     SELECT p.*, c.name as categoryName 
     FROM Project p 
@@ -37,6 +37,18 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
 
   const project = rows[0];
   if (!project) notFound();
+
+// ✅ 수정된 쿼리: 좋아요 순으로 정렬하되, 데이터가 적어도 무조건 나오도록 보강
+const [recommendations]: any = await pool.query(`
+  SELECT 
+    p.id, p.title, p.thumbnail, p.description,
+    (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
+  FROM Project p
+  WHERE p.isVisible = 1 
+    AND p.id != ?
+  ORDER BY (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) DESC, p.id DESC
+  LIMIT 3
+`, [id]);
 
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
@@ -54,12 +66,9 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     <article className="min-h-screen bg-white dark:bg-zinc-950 pb-20 relative transition-colors duration-300">
       <ProgressBar />
 
-      {/* 1. 헤더 영역 (제목 등) */}
       <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
         <div className="max-w-3xl mx-auto px-6">
-
           <BackButton />
-
           <div className="flex items-center gap-3 mb-4">
             <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest">
               {project.categoryName || "Uncategorized"}
@@ -74,7 +83,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </header>
 
-      {/* 2. 본문 영역 */}
       <div className="max-w-3xl mx-auto px-6 relative flex flex-col items-center content-view">
         <aside className="hidden xl:block absolute left-[calc(100%+60px)] top-16 h-full">
             <div className="sticky top-32 w-52">
@@ -83,12 +91,45 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </aside>
 
         <div className="w-full py-16">
-          {/* ✅ [수정] projectId를 ContentView에 전달하여 좋아요/공유 기능을 활성화합니다. */}
           <ContentView 
             html={project.description} 
             projectId={project.id} 
             loadingOverlay={<LoadingOverlay />} 
           />
+          
+          {/* ✅ [추가] 추천 게시글 섹션: 직사각형 카드 디자인 */}
+          {recommendations.length > 0 && (
+            <section className="mt-40">
+              <div className="mb-10">
+                <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">
+                  More Projects
+                </h3>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
+                {recommendations.map((rec: any) => (
+                  <Link key={rec.id} href={`/projects/${rec.id}`} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                    <div className="relative aspect-[16/10] overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
+                      <Image
+                        src={rec.thumbnail || "/placeholder.jpg"}
+                        alt={rec.title}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="p-6 flex flex-col gap-3">
+                      <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
+                        {rec.title}
+                      </h4>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                        {rec.description?.replace(/<[^>]*>?/gm, '').slice(0, 100)}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
           
           <div className="mt-24">
             <CommentSection projectId={id} isAdmin={isAdmin} />
@@ -96,7 +137,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         </div>
       </div>
 
-      {/* 3. 하단 내비게이션 */}
       <div className="max-w-3xl mx-auto px-6 mt-32 border-t border-gray-100 dark:border-zinc-800 pt-12">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {newerPost ? (
