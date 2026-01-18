@@ -8,7 +8,6 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
 
-// 에디터 로드 설정
 const ReactQuillEditor = dynamic(
   async () => {
     const { default: RQ } = await import("react-quill-new");
@@ -22,7 +21,7 @@ const ReactQuillEditor = dynamic(
     Quill.register(AlignStyle, true);
     return RQ;
   },
-  { ssr: false, loading: () => <div className="h-80 bg-zinc-50 animate-pulse rounded-2xl border border-zinc-200" /> }
+  { ssr: false, loading: () => <div className="h-80 bg-zinc-50 animate-pulse border-b border-zinc-200" /> }
 ) as any;
 
 import "react-quill-new/dist/quill.snow.css";
@@ -44,7 +43,6 @@ export default function NewProjectPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 이미지 핸들러 로직 (기존과 동일)
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -129,67 +127,65 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB]">
-      {/* 🔹 상단 플로팅 헤더 */}
-      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/admin/projects" className="p-2.5 hover:bg-zinc-100 rounded-full transition-all text-zinc-500 hover:text-zinc-900">
-              <ArrowLeft size={22} />
-            </Link>
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Editor</span>
-              <h1 className="text-lg font-bold text-zinc-900 leading-none">새 프로젝트 작성</h1>
-            </div>
+    <div className="lg:h-screen flex flex-col bg-white lg:overflow-hidden">
+      {/* 1. 헤더 */}
+      <header className="shrink-0 w-full bg-white border-b border-zinc-200 h-16 flex items-center justify-between px-6 z-[100]">
+        <div className="flex items-center gap-4">
+          <Link href="/admin/projects" className="p-2 hover:bg-zinc-100 rounded-full transition-all text-zinc-500 hover:text-zinc-900">
+            <ArrowLeft size={20} />
+          </Link>
+          <div className="flex flex-col">
+            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Editor</span>
+            <h1 className="text-base font-bold text-zinc-900 leading-none">새 프로젝트 작성</h1>
           </div>
-          <button 
-            onClick={handleSubmit}
-            disabled={isSubmitting || isUploading}
-            className="group relative bg-zinc-900 text-white px-7 py-3 rounded-full flex items-center gap-2.5 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-sm"
-          >
-            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} className="group-hover:scale-110 transition-transform" />}
-            {isSubmitting ? "저장 중..." : "게시하기"}
-          </button>
         </div>
+        <button 
+          onClick={handleSubmit}
+          disabled={isSubmitting || isUploading}
+          className="bg-zinc-900 text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-xs"
+        >
+          {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+          {isSubmitting ? "저장 중..." : "게시하기"}
+        </button>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          
-          {/* 🔹 왼쪽: 본문 작성 영역 (8) */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="bg-white p-8 rounded-[32px] border border-zinc-200/60 shadow-sm">
-              <input
-                type="text"
-                placeholder="제목을 입력하세요"
-                className="w-full text-4xl font-black p-0 border-none outline-none placeholder:text-zinc-200 bg-transparent focus:ring-0 text-zinc-900 mb-8"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
-              <div className="prose prose-zinc max-w-none">
-                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4">Content Body</label>
-                <div className="min-h-[500px] border-t border-zinc-100 pt-6">
-                  <ReactQuillEditor
-                    ref={quillRef}
-                    theme="snow"
-                    value={content}
-                    onChange={setContent}
-                    modules={editorModules}
-                    className="editor-custom"
-                  />
-                </div>
-              </div>
-            </div>
+      {/* 메인 레이아웃 */}
+      <main className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden bg-white">
+        
+        {/* 본문 에디터 영역 */}
+        <div className="flex-1 flex flex-col bg-white lg:overflow-hidden min-h-0">
+          {/* 제목 영역 */}
+          <div className="shrink-0 bg-white px-6 lg:px-12 h-24 lg:h-32 flex items-center border-b border-zinc-50">
+            <input
+              type="text"
+              placeholder="제목을 입력하세요"
+              className="w-full text-2xl lg:text-4xl font-black p-0 border-none outline-none placeholder:text-zinc-200 bg-transparent focus:ring-0 text-zinc-900"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
 
-          {/* 🔹 오른쪽: 설정 사이드바 (4) */}
-          <aside className="lg:col-span-4 space-y-6">
-            {/* 카테고리 & 썸네일 */}
-            <section className="bg-white p-6 rounded-[28px] border border-zinc-200/60 shadow-sm space-y-6">
+          {/* 에디터 영역 (컨테이너 높이 고정) */}
+          <div className="flex-1 flex flex-col relative overflow-hidden min-h-[400px] lg:min-h-0">
+            <ReactQuillEditor
+              ref={quillRef}
+              theme="snow"
+              value={content}
+              onChange={setContent}
+              modules={editorModules}
+              className="editor-custom h-full flex flex-col"
+            />
+          </div>
+        </div>
+
+        {/* 우측 설정 사이드바 */}
+        <aside className="w-full lg:w-80 shrink-0 bg-zinc-50/50 lg:border-l border-zinc-200 lg:overflow-y-auto">
+          <div className="flex flex-col divide-y divide-zinc-200 min-h-full">
+            <section className="p-6 space-y-5">
               <div>
-                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">Category</label>
+                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Category</label>
                 <select 
-                  className="w-full bg-zinc-50 border border-zinc-100 px-4 py-3.5 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900 text-zinc-900 appearance-none cursor-pointer"
+                  className="w-full bg-white border border-zinc-200 px-4 py-3 rounded-xl text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900 text-zinc-900 appearance-none cursor-pointer"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                 >
@@ -200,11 +196,11 @@ export default function NewProjectPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">Thumbnail</label>
+                <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2">Thumbnail</label>
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className={`relative aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden
-                    ${thumbnail ? "border-transparent" : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"}`}
+                  className={`relative aspect-video rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden
+                    ${thumbnail ? "border-transparent" : "border-zinc-200 bg-white hover:bg-zinc-50"}`}
                 >
                   {thumbnail ? (
                     <>
@@ -215,10 +211,10 @@ export default function NewProjectPage() {
                     </>
                   ) : (
                     <>
-                      <div className="p-3 bg-white rounded-full shadow-sm mb-2 text-zinc-400">
-                        {isUploading ? <Loader2 className="animate-spin" size={20} /> : <ImageIcon size={20} />}
+                      <div className="p-2.5 bg-white rounded-full shadow-sm mb-1.5 text-zinc-400 border border-zinc-100">
+                        {isUploading ? <Loader2 className="animate-spin" size={18} /> : <ImageIcon size={18} />}
                       </div>
-                      <p className="text-[11px] font-bold text-zinc-400 uppercase">Upload Image</p>
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase">Upload Image</p>
                     </>
                   )}
                 </div>
@@ -226,76 +222,91 @@ export default function NewProjectPage() {
               </div>
             </section>
 
-            {/* 노출 설정 */}
-            <section className="bg-white p-6 rounded-[28px] border border-zinc-200/60 shadow-sm space-y-3">
-              <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status & Visibility</label>
+            <section className="p-6 space-y-3 pb-20 lg:pb-6">
+              <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status & Visibility</label>
               
-              <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 group cursor-pointer"
+              <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-zinc-200 cursor-pointer"
                    onClick={() => { setIsVisible(!isVisible); if(isVisible) setShowInAll(false); }}>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${isVisible ? "bg-blue-50 text-blue-500" : "bg-zinc-200 text-zinc-500"}`}>
-                    {isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+                  <div className={`p-1.5 rounded-lg ${isVisible ? "bg-blue-50 text-blue-500" : "bg-zinc-100 text-zinc-400"}`}>
+                    {isVisible ? <Eye size={16} /> : <EyeOff size={16} />}
                   </div>
-                  <span className="text-sm font-bold text-zinc-700">웹사이트 공개</span>
+                  <span className="text-xs font-bold text-zinc-700">웹사이트 공개</span>
                 </div>
-                <input type="checkbox" checked={isVisible} readOnly className="sr-only" />
-                <div className={`w-10 h-5 rounded-full transition-colors relative ${isVisible ? "bg-zinc-900" : "bg-zinc-300"}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isVisible ? "left-6" : "left-1"}`} />
+                <div className={`w-9 h-4.5 rounded-full transition-colors relative ${isVisible ? "bg-zinc-900" : "bg-zinc-200"}`}>
+                  <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${isVisible ? "left-5" : "left-0.5"}`} />
                 </div>
               </div>
 
-              <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all 
-                ${!isVisible ? "bg-zinc-50/50 opacity-40 grayscale cursor-not-allowed" : "bg-zinc-50 border-zinc-100 cursor-pointer"}`}
+              <div className={`flex items-center justify-between p-3.5 bg-white rounded-xl border transition-all 
+                ${!isVisible ? "opacity-40 grayscale cursor-not-allowed border-zinc-100" : "border-zinc-200 cursor-pointer"}`}
                    onClick={() => isVisible && setShowInAll(!showInAll)}>
                 <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${showInAll && isVisible ? "bg-purple-50 text-purple-500" : "bg-zinc-200 text-zinc-500"}`}>
-                    <LayoutGrid size={18} />
+                  <div className={`p-1.5 rounded-lg ${showInAll && isVisible ? "bg-purple-50 text-purple-500" : "bg-zinc-100 text-zinc-400"}`}>
+                    <LayoutGrid size={16} />
                   </div>
-                  <span className="text-sm font-bold text-zinc-700">전체 목록 노출</span>
+                  <span className="text-xs font-bold text-zinc-700">전체 목록 노출</span>
                 </div>
-                <div className={`w-10 h-5 rounded-full transition-colors relative ${showInAll && isVisible ? "bg-zinc-900" : "bg-zinc-300"}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showInAll && isVisible ? "left-6" : "left-1"}`} />
+                <div className={`w-9 h-4.5 rounded-full transition-colors relative ${showInAll && isVisible ? "bg-zinc-900" : "bg-zinc-200"}`}>
+                  <div className={`absolute top-0.5 w-3.5 h-3.5 bg-white rounded-full transition-all ${showInAll && isVisible ? "left-5" : "left-0.5"}`} />
                 </div>
               </div>
             </section>
-
-            {/* 안내 문구 */}
-            <p className="px-4 text-[11px] text-zinc-400 leading-relaxed">
-              * 저장된 프로젝트는 즉시 웹사이트에 반영됩니다. <br/>
-              * 썸네일 권장 해상도는 16:9 비율입니다.
-            </p>
-          </aside>
-
-        </div>
+          </div>
+        </aside>
       </main>
 
-      {/* 🔹 에디터 스타일 커스텀을 위한 글로벌 스타일 */}
       <style jsx global>{`
+        /* 툴바 고정 및 에디터 내부 스크롤 핵심 설정 */
+        .editor-custom { border: none !important; display: flex; flex-direction: column; }
+        
+        .editor-custom .ql-toolbar {
+          flex-shrink: 0;
+          position: sticky;
+          top: 0;
+          z-index: 50;
+          background: white !important; 
+          border-top: none !important;
+          border-bottom: 1px solid #f4f4f5 !important;
+          border-left: none !important;
+          border-right: none !important;
+          padding: 10px 24px lg:padding: 10px 32px !important;
+        }
+        
         .editor-custom .ql-container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
           border: none !important;
           font-family: inherit;
           font-size: 16px;
-          /* 💡 아래 부분을 추가하여 에디터 컨테이너 자체가 최소 높이를 가지게 합니다 */
-          min-height: 500px; 
-          cursor: text;
+          overflow: hidden; /* 컨테이너 밖으로 내용 안 넘치게 고정 */
         }
-        .editor-custom .ql-toolbar {
-          border: none !important;
-          border-bottom: 1px solid #f4f4f5 !important;
-          padding: 8px 0 20px 0 !important;
-          margin-bottom: 20px;
+        
+        /* PC와 모바일 모두 내부 스크롤 강제 */
+        .editor-custom .ql-editor { 
+          flex: 1;
+          overflow-y: auto !important; /* 내부 스크롤 생성 */
+          padding: 30px 24px lg:padding: 60px 32px !important; 
+          color: #18181b; 
+          line-height: 1.8; 
+          -webkit-overflow-scrolling: touch;
         }
-        .editor-custom .ql-editor {
-          padding: 0 !important;
-          color: #18181b;
-          /* 💡 에디터 내부 입력창이 영역 전체를 채우도록 설정합니다 */
-          min-height: 500px; 
+
+        /* 데스크톱에서 부모 높이 제어 */
+        @media (min-width: 1024px) {
+          html, body { overflow: hidden; height: 100%; }
+          .editor-custom .ql-editor { height: 100%; }
         }
-        .editor-custom .ql-editor.ql-blank::before {
-          left: 0 !important;
-          font-style: normal;
-          color: #e4e4e7;
+
+        /* 모바일에서 브라우저 스크롤은 유지하되 에디터 영역 자체 스크롤 */
+        @media (max-width: 1023px) {
+          .editor-custom .ql-editor { max-height: 60vh; } /* 모바일에서 에디터 영역이 너무 길어지지 않게 조절 */
         }
+
+        .editor-custom .ql-editor::-webkit-scrollbar { width: 6px; }
+        .editor-custom .ql-editor::-webkit-scrollbar-thumb { background-color: #e4e4e7; border-radius: 10px; }
+        .ql-tooltip { z-index: 110 !important; }
       `}</style>
     </div>
   );
