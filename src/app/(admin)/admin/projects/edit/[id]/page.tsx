@@ -3,12 +3,12 @@
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff, LayoutGrid, LayoutList } from "lucide-react"; // ✅ 아이콘 추가
+import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff, LayoutGrid, LayoutList } from "lucide-react";
 import 'react-quill-new/dist/quill.snow.css';
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
 
-// ✅ 서버 액션 임포트
+// 서버 액션 임포트
 import { updateProject } from "@/lib/actions";
 
 // 에디터 로드 설정
@@ -21,9 +21,7 @@ const ReactQuillEditor = dynamic(
     const AlignStyle = Quill.import('attributors/style/align');
     Quill.register(AlignStyle, true);
 
-    if (typeof window !== 'undefined') { 
-      (window as any).Quill = Quill; 
-    }
+    if (typeof window !== 'undefined') { (window as any).Quill = Quill; }
     
     if (!Quill.imports["modules/imageResize"]) {
       Quill.register("modules/imageResize", ImageResize);
@@ -32,11 +30,10 @@ const ReactQuillEditor = dynamic(
   },
   { 
     ssr: false,
-    loading: () => <div className="h-80 bg-gray-50 animate-pulse rounded-xl border border-gray-200" />
+    loading: () => <div className="h-80 bg-zinc-50 animate-pulse rounded-2xl border border-zinc-200" />
   }
 ) as any; 
 
-// ✅ 상수 정의: 4MB 제한 (바이트 단위)
 const MAX_FILE_SIZE = 4 * 1024 * 1024; 
 
 export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -51,13 +48,12 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [category, setCategory] = useState(''); 
   const [thumbnail, setThumbnail] = useState(""); 
   const [isVisible, setIsVisible] = useState(true);
-  const [showInAll, setShowInAll] = useState(true); // ✅ [추가] 전체 노출 상태 State 추가
+  const [showInAll, setShowInAll] = useState(true);
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  // 1️⃣ 에디터 이미지 핸들러 (기존 유지)
   const imageHandler = useMemo(() => {
     return () => {
       const input = document.createElement("input");
@@ -68,7 +64,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       input.onchange = async () => {
         const file = input.files?.[0];
         if (!file) return;
-
         if (file.size > MAX_FILE_SIZE) {
           alert("이미지 용량이 너무 큽니다. 4MB 이하의 파일만 업로드 가능합니다.");
           return;
@@ -76,14 +71,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
         try {
           setIsUploading(true);
-          const response = await fetch(`/api/upload?filename=${file.name}`, {
-            method: 'POST',
-            body: file,
-          });
-
-          if (!response.ok) throw new Error("업로드 실패");
+          const response = await fetch(`/api/upload?filename=${file.name}`, { method: 'POST', body: file });
           const newBlob = await response.json();
-
           const editor = quillRef.current?.getEditor();
           if (editor) {
             const range = editor.getSelection(true);
@@ -91,7 +80,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             editor.setSelection(range.index + 1);
           }
         } catch (error) {
-          console.error("Editor Upload Error:", error);
           alert("이미지 업로드에 실패했습니다.");
         } finally {
           setIsUploading(false);
@@ -110,16 +98,11 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
         ["link", "image"],
         ["clean"],
       ],
-      handlers: {
-        image: imageHandler,
-      },
+      handlers: { image: imageHandler },
     },
-    imageResize: {
-      modules: ["Resize", "DisplaySize"],
-    },
+    imageResize: { modules: ["Resize", "DisplaySize"] },
   }), [imageHandler]);
 
-  // 데이터 초기 로딩 로직
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -127,7 +110,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           fetch('/api/categories'),
           fetch(`/api/projects/detail?id=${id}`)
         ]);
-        if (!catRes.ok || !projRes.ok) throw new Error("데이터 로딩 실패");
         const catData = await catRes.json();
         const projData = await projRes.json();
         setCategories(catData);
@@ -138,57 +120,26 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           setCategory(currentCat ? String(currentCat.id) : "");
           setThumbnail(projData.thumbnail || "");
           setIsVisible(Number(projData.isVisible) !== 0);
-          setShowInAll(Number(projData.showInAll) !== 0); // ✅ [추가] DB의 showInAll 값을 상태에 반영
+          setShowInAll(Number(projData.showInAll) !== 0);
         }
-      } catch (err) {
-        console.error("Fetch Error:", err);
-      } finally {
-        setIsLoading(false);
-      }
+      } catch (err) { console.error(err); } finally { setIsLoading(false); }
     };
     if (id) fetchData();
   }, [id]);
 
-  // 2️⃣ 썸네일 이미지 핸들러 (기존 유지)
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-      alert("썸네일 용량이 너무 큽니다. 4MB 이하의 이미지만 업로드 가능합니다.");
-      e.target.value = ""; 
-      return;
-    }
-
     try {
       setIsUploading(true);
-      const response = await fetch(`/api/upload?filename=${file.name}`, {
-        method: 'POST',
-        body: file,
-      });
-
-      if (!response.ok) throw new Error("업로드 실패");
+      const response = await fetch(`/api/upload?filename=${file.name}`, { method: 'POST', body: file });
       const newBlob = await response.json();
       setThumbnail(newBlob.url);
-    } catch (error) {
-      console.error("Thumbnail Upload Error:", error);
-      alert("이미지 업로드 중 오류가 발생했습니다.");
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (error) { alert("이미지 업로드 오류"); } finally { setIsUploading(false); }
   };
 
-  // 업데이트 실행 로직
   const handleUpdate = async () => {
-    if (!title.trim() || !category) {
-      alert("제목과 카테고리를 확인해주세요.");
-      return;
-    }
-    if (isUploading) {
-      alert("이미지가 아직 업로드 중입니다.");
-      return;
-    }
-
+    if (!title.trim() || !category) { alert("제목과 카테고리를 확인해주세요."); return; }
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -197,163 +148,158 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
       formData.append("isVisible", isVisible ? "1" : "0");
-      formData.append("showInAll", showInAll ? "1" : "0"); // ✅ [추가] formData에 showInAll 정보 추가
-
+      formData.append("showInAll", showInAll ? "1" : "0");
       await updateProject(Number(id), formData);
-      
       alert('수정되었습니다!');
       router.push('/admin/projects');
       router.refresh();
-
     } catch (err: any) {
-      if (err.message?.includes('NEXT_REDIRECT')) return;
-      console.error(err);
-      alert("수정 중 오류가 발생했습니다.");
-    } finally {
-      setIsSubmitting(false);
-    }
+      if (!err.message?.includes('NEXT_REDIRECT')) alert("수정 중 오류 발생");
+    } finally { setIsSubmitting(false); }
   };
 
-  if (isLoading) return <div className="p-10 text-center text-gray-400 font-bold uppercase tracking-widest">Loading...</div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-zinc-400 font-black uppercase tracking-widest text-xs">Loading Data...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto pb-20 pt-10 px-4">
-      <div className="flex items-center justify-between mb-10">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <ArrowLeft size={24} />
-          </button>
-          <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tighter">Edit Project</h1>
-        </div>
-        <button 
-          onClick={handleUpdate}
-          disabled={isSubmitting || isUploading}
-          className="bg-black text-white px-6 py-2.5 rounded-xl flex items-center gap-2 hover:bg-zinc-800 transition-all font-bold disabled:bg-slate-400 shadow-sm uppercase text-sm"
-        >
-          {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
-          {isSubmitting ? "Saving..." : "Update"}
-        </button>
-      </div>
-
-      <div className="space-y-8 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-2xl font-black p-0 border-none outline-none bg-transparent focus:ring-0 placeholder:text-slate-200 uppercase"
-            placeholder="ENTER TITLE"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
-            <select 
-              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm outline-none focus:ring-2 focus:ring-black transition-all cursor-pointer font-bold"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">SELECT CATEGORY</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Thumbnail</label>
-            <div className="flex items-center gap-4">
-              <button 
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-black transition-colors text-slate-600 border border-slate-200 uppercase"
-              >
-                {isUploading ? <Loader2 className="animate-spin" size={16} /> : <ImageIcon size={16} />}
-                {isUploading ? "Uploading..." : "Change Image"}
-              </button>
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-              {thumbnail && (
-                <div className="relative w-16 h-10 rounded-lg overflow-hidden border border-slate-200 group shadow-sm">
-                  <Image src={thumbnail} alt="Preview" fill className="object-cover" />
-                  <button 
-                    type="button"
-                    onClick={() => setThumbnail("")}
-                    className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X size={14} className="text-white" />
-                  </button>
-                </div>
-              )}
+    <div className="min-h-screen bg-[#F9FAFB]">
+      {/* 🔹 상단 플로팅 헤더 */}
+      <header className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-zinc-200">
+        <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => router.back()} className="p-2.5 hover:bg-zinc-100 rounded-full transition-all text-zinc-500 hover:text-zinc-900">
+              <ArrowLeft size={22} />
+            </button>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none mb-1">Editing Mode</span>
+              <h1 className="text-lg font-bold text-zinc-900 leading-none truncate max-w-[200px] md:max-w-md">프로젝트 수정</h1>
             </div>
           </div>
+          <button 
+            onClick={handleUpdate}
+            disabled={isSubmitting || isUploading}
+            className="group bg-zinc-900 text-white px-7 py-3 rounded-full flex items-center gap-2.5 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-sm shadow-sm"
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} className="group-hover:scale-110 transition-transform" />}
+            {isSubmitting ? "Saving..." : "업데이트 완료"}
+          </button>
         </div>
+      </header>
 
-        {/* ✅ [수정] 노출 설정 체크박스 영역 (토글 2개 배치) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* 1. 웹사이트 공개 (부모 전원) */}
-          <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner">
-            <input
-              type="checkbox"
-              id="isVisible"
-              checked={isVisible}
-              onChange={(e) => {
-                const checked = e.target.checked;
-                setIsVisible(checked);
-                // 💡 비공개로 변경 시 'All Works' 노출도 자동으로 해제
-                if (!checked) setShowInAll(false);
-              }}
-              className="w-5 h-5 rounded border-gray-300 text-black focus:ring-black cursor-pointer accent-black"
-            />
-            <label htmlFor="isVisible" className="flex items-center gap-2 text-[11px] font-black text-slate-600 cursor-pointer select-none uppercase tracking-tighter">
-              {isVisible ? <Eye size={16} className="text-blue-500" /> : <EyeOff size={16} className="text-slate-400" />}
-              {isVisible ? "Project is Public" : "Project is Private"}
-            </label>
+      <main className="max-w-5xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          
+          {/* 🔹 왼쪽: 본문 작성 영역 */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-white p-8 rounded-[32px] border border-zinc-200/60 shadow-sm">
+              <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-2">Project Title</label>
+              <input
+                type="text"
+                placeholder="제목을 입력하세요"
+                className="w-full text-4xl font-black p-0 border-none outline-none placeholder:text-zinc-200 bg-transparent focus:ring-0 text-zinc-900 mb-8"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+              <div className="prose prose-zinc max-w-none">
+                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-4">Description Content</label>
+                <div className="min-h-[500px] border-t border-zinc-100 pt-6">
+                  <ReactQuillEditor
+                    ref={quillRef}
+                    theme="snow"
+                    value={content}
+                    onChange={setContent}
+                    modules={editorModules}
+                    className="editor-custom"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* 2. 전체 목록 노출 (자식 전원: isVisible에 의존) */}
-          <div className={`flex items-center gap-3 p-4 rounded-2xl border shadow-inner transition-all ${
-            !isVisible ? "bg-gray-100 border-gray-200 opacity-50" : "bg-slate-50 border-slate-100"
-          }`}>
-            <input
-              type="checkbox"
-              id="showInAll"
-              checked={showInAll}
-              // 💡 isVisible이 꺼져있으면 체크박스 잠금
-              disabled={!isVisible}
-              onChange={(e) => setShowInAll(e.target.checked)}
-              className={`w-5 h-5 rounded border-gray-300 text-black focus:ring-black ${
-                !isVisible ? "cursor-not-allowed" : "cursor-pointer accent-black"
-              }`}
-            />
-            <label 
-              htmlFor="showInAll" 
-              className={`flex items-center gap-2 text-[11px] font-black select-none uppercase tracking-tighter ${
-                !isVisible ? "text-slate-400 cursor-not-allowed" : "text-slate-600 cursor-pointer"
-              }`}
-            >
-              {showInAll && isVisible ? <LayoutGrid size={16} className="text-purple-500" /> : <LayoutList size={16} className="text-slate-400" />}
-              {showInAll ? "Visible in All Works" : "Hidden from All Works"}
-            </label>
-          </div>
-        </div>
+          {/* 🔹 오른쪽: 설정 사이드바 */}
+          <aside className="lg:col-span-4 space-y-6">
+            {/* 카테고리 & 썸네일 */}
+            <section className="bg-white p-6 rounded-[28px] border border-zinc-200/60 shadow-sm space-y-6 sticky top-28">
+              <div>
+                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">Category Selection</label>
+                <select 
+                  className="w-full bg-zinc-50 border border-zinc-100 px-4 py-3.5 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-zinc-900 text-zinc-900 cursor-pointer appearance-none"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="">카테고리 선택</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
 
-        <div>
-          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Content</label>
-          <div className="rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-inner">
-            <ReactQuillEditor
-              ref={quillRef}
-              theme="snow"
-              value={content}
-              onChange={setContent}
-              modules={editorModules} 
-              className="h-96 mb-12"
-            />
-          </div>
+              <div>
+                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-3">Thumbnail Preview</label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden group
+                    ${thumbnail ? "border-transparent shadow-md" : "border-zinc-200 bg-zinc-50 hover:bg-zinc-100"}`}
+                >
+                  {thumbnail ? (
+                    <>
+                      <Image src={thumbnail} alt="Preview" fill className="object-cover" />
+                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <p className="text-white text-[10px] font-black uppercase bg-black/40 px-3 py-2 rounded-full backdrop-blur-sm">이미지 변경</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="p-3 bg-white rounded-full shadow-sm mb-2 text-zinc-400">
+                        {isUploading ? <Loader2 className="animate-spin" size={20} /> : <ImageIcon size={20} />}
+                      </div>
+                      <p className="text-[10px] font-black text-zinc-400 uppercase">Click to Upload</p>
+                    </>
+                  )}
+                </div>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+              </div>
+
+              {/* 노출 설정 스위치 */}
+              <div className="space-y-3 pt-2">
+                <label className="block text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status & Visibility</label>
+                
+                <div className="flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border border-zinc-100 cursor-pointer"
+                     onClick={() => { setIsVisible(!isVisible); if(isVisible) setShowInAll(false); }}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${isVisible ? "bg-blue-50 text-blue-500" : "bg-zinc-200 text-zinc-500"}`}>
+                      {isVisible ? <Eye size={18} /> : <EyeOff size={18} />}
+                    </div>
+                    <span className="text-xs font-bold text-zinc-700">웹사이트 공개</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors relative ${isVisible ? "bg-zinc-900" : "bg-zinc-300"}`}>
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${isVisible ? "left-6" : "left-1"}`} />
+                  </div>
+                </div>
+
+                <div className={`flex items-center justify-between p-4 rounded-2xl border transition-all 
+                  ${!isVisible ? "opacity-40 grayscale cursor-not-allowed" : "bg-zinc-50 border-zinc-100 cursor-pointer"}`}
+                     onClick={() => isVisible && setShowInAll(!showInAll)}>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${showInAll && isVisible ? "bg-purple-50 text-purple-500" : "bg-zinc-200 text-zinc-500"}`}>
+                      <LayoutGrid size={18} />
+                    </div>
+                    <span className="text-xs font-bold text-zinc-700">전체 목록 노출</span>
+                  </div>
+                  <div className={`w-10 h-5 rounded-full transition-colors relative ${showInAll && isVisible ? "bg-zinc-900" : "bg-zinc-300"}`}>
+                    <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${showInAll && isVisible ? "left-6" : "left-1"}`} />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </aside>
         </div>
-      </div>
+      </main>
+
+      <style jsx global>{`
+        .editor-custom .ql-container { border: none !important; font-family: inherit; font-size: 16px; }
+        .editor-custom .ql-toolbar { border: none !important; border-bottom: 1px solid #f4f4f5 !important; padding: 8px 0 20px 0 !important; margin-bottom: 20px; }
+        .editor-custom .ql-editor { padding: 0 !important; color: #18181b; min-height: 400px; }
+      `}</style>
     </div>
   );
 }

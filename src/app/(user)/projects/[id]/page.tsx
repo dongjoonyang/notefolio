@@ -112,7 +112,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
             <section className="mt-40">
               <div className="mb-10">
                 <h3 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.3em]">
-                  More Projects
+                  함께 보면 좋은 글
                 </h3>
               </div>
               
