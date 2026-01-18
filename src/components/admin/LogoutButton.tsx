@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
+import { signOut } from "next-auth/react"; // 1. signOut 가져오기
 
 interface LogoutButtonProps {
   variant?: "sidebar" | "dashboard";
@@ -14,19 +15,22 @@ export default function LogoutButton({ variant = "dashboard" }: LogoutButtonProp
     if (!confirm("정말 로그아웃 하시겠습니까?")) return;
 
     try {
-      const res = await fetch("/api/logout", { method: "POST" });
-      if (res.ok) {
-        // 클라이언트 쿠키 강제 삭제 (보안 보조)
-        document.cookie = "admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-        router.refresh();
-        router.push("/login");
-      }
+      // 2. Auth.js 전용 로그아웃 함수 호출
+      // 이 함수가 세션 쿠키를 지우고 자동으로 리다이렉트까지 처리합니다.
+      await signOut({ 
+        callbackUrl: "/login", // 로그아웃 후 이동할 페이지
+        redirect: true 
+      });
+      
+      // 3. 만약의 잔재를 위해 기존 쿠키 삭제 로직은 유지해도 좋습니다.
+      document.cookie = "admin_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
   };
 
-  // 사이드바용 스타일
+  // UI 로직은 그대로 유지 (변경 없음)
   if (variant === "sidebar") {
     return (
       <button 
@@ -38,7 +42,6 @@ export default function LogoutButton({ variant = "dashboard" }: LogoutButtonProp
     );
   }
 
-  // 대시보드 상단 버튼용 스타일
   return (
     <button 
       onClick={handleLogout}
