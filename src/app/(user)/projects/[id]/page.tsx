@@ -8,7 +8,20 @@ import ProgressBar from "./ProgressBar";
 import TOC from "./TOC";
 import ContentView from "./ContentView";
 import BackButton from "@/components/BackButton";
-import Image from "next/image"; // ✅ 이미지 사용을 위해 추가
+import Image from "next/image";
+
+// 💡 HTML 태그 및 엔티티를 제거하여 순수 텍스트만 추출하는 헬퍼 함수
+function stripHtml(html: string) {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]*>?/gm, "") // 태그 제거
+    .replace(/&nbsp;/g, " ")   // 공백 처리
+    .replace(/&amp;/g, "&")    // 앰퍼샌드 처리
+    .replace(/&lt;/g, "<")     // 부등호 처리
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')   // 따옴표 처리
+    .trim();
+}
 
 function LoadingOverlay() {
   return (
@@ -27,7 +40,6 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const cookieStore = await cookies();
   const isAdmin = !!cookieStore.get("admin_session");
 
-  // 1. 현재 게시글 데이터 호출
   const [rows]: any = await pool.query(`
     SELECT p.*, c.name as categoryName 
     FROM Project p 
@@ -38,17 +50,16 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const project = rows[0];
   if (!project) notFound();
 
-// ✅ 수정된 쿼리: 좋아요 순으로 정렬하되, 데이터가 적어도 무조건 나오도록 보강
-const [recommendations]: any = await pool.query(`
-  SELECT 
-    p.id, p.title, p.thumbnail, p.description,
-    (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
-  FROM Project p
-  WHERE p.isVisible = 1 
-    AND p.id != ?
-  ORDER BY (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) DESC, p.id DESC
-  LIMIT 3
-`, [id]);
+  const [recommendations]: any = await pool.query(`
+    SELECT 
+      p.id, p.title, p.thumbnail, p.description,
+      (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
+    FROM Project p
+    WHERE p.isVisible = 1 
+      AND p.id != ?
+    ORDER BY (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) DESC, p.id DESC
+    LIMIT 3
+  `, [id]);
 
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
@@ -97,7 +108,6 @@ const [recommendations]: any = await pool.query(`
             loadingOverlay={<LoadingOverlay />} 
           />
           
-          {/* ✅ [추가] 추천 게시글 섹션: 직사각형 카드 디자인 */}
           {recommendations.length > 0 && (
             <section className="mt-40">
               <div className="mb-10">
@@ -108,21 +118,22 @@ const [recommendations]: any = await pool.query(`
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 {recommendations.map((rec: any) => (
-                  <Link key={rec.id} href={`/projects/${rec.id}`} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                  <Link key={rec.id} href={`/projects/${rec.id}`} className="group flex flex-col bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 transition-all hover:border-zinc-300 dark:hover:border-zinc-600">
                     <div className="relative aspect-[16/10] overflow-hidden border-b border-zinc-100 dark:border-zinc-800">
                       <Image
                         src={rec.thumbnail || "/placeholder.jpg"}
                         alt={rec.title}
                         fill
-                        className="object-cover"
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     </div>
                     <div className="p-6 flex flex-col gap-3">
                       <h4 className="text-base font-bold text-zinc-900 dark:text-zinc-100 line-clamp-1">
                         {rec.title}
                       </h4>
+                      {/* 💡 수정된 부분: stripHtml 함수를 사용하여 태그 없는 순수 텍스트만 출력 */}
                       <p className="text-sm text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
-                        {rec.description?.replace(/<[^>]*>?/gm, '').slice(0, 100)}
+                        {stripHtml(rec.description).slice(0, 100)}
                       </p>
                     </div>
                   </Link>
