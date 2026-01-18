@@ -93,12 +93,12 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
         <div className="flex items-center gap-4">
           <div className="hidden lg:flex items-center gap-5">
             <ThemeToggle />
-            {showAdminMenu && (
+            {/* {showAdminMenu && (
               <>
                 <Link href="/admin" target="_blank" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">ADMIN</Link>
                 <button onClick={handleLogout} className="text-[10px] font-bold text-red-500 dark:text-red-400 hover:opacity-70 transition-opacity">LOGOUT</button>
               </>
-            )}
+            )} */}
           </div>
 
           <button 
@@ -137,12 +137,12 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
                 <ThemeToggle />
               </div>
               
-              {showAdminMenu && (
+              {/* {showAdminMenu && (
                 <>
                   <Link href="/admin" target="_blank" className="text-blue-600 dark:text-blue-400 font-bold text-lg">ADMIN SETTINGS</Link>
                   <button onClick={handleLogout} className="text-red-500 dark:text-red-400 font-bold text-lg text-left">LOGOUT</button>
                 </>
-              )}
+              )} */}
             </div>
           </motion.div>
         )}
