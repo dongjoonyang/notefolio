@@ -11,7 +11,17 @@ html, body {
 /* 팝업이 열려도 스크롤바 자리를 예약해서 화면 밀림을 방지합니다 */
   scrollbar-gutter: stable;
 }
+/* 💡 모달이 열렸을 때만 스크롤바 예약 공간을 삭제 */
+body.modal-open {
+  overflow: hidden !important;
+  scrollbar-gutter: auto !important; /* 예약 공간 해제 */
+}
 
+/* 뒷배경 스크롤바가 끈질기게 남을 경우를 대비한 완전 박멸 */
+body.modal-open::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+}
 body {
   @apply bg-white text-zinc-900 transition-colors duration-300;
 }
