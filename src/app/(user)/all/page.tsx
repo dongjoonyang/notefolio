@@ -118,20 +118,19 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    /* 💡 pt-20을 적용하여 상단 여백을 더 확보했습니다. */
     <main className="max-w-7xl mx-auto px-6 pt-20 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-        <h1 className="text-4xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
+        <h1 className="text-5xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
-        <div className="relative w-full md:w-72">
+        <div className="relative w-full md:w-80">
           <div className="relative flex items-center">
             <Search 
-              size={18} 
+              size={20} 
               className="absolute left-4 text-zinc-900 dark:text-zinc-400 stroke-[2.5px]" 
             />
             <input
@@ -140,65 +139,71 @@ function ProjectListContent() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full pl-11 pr-10 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 focus:border-zinc-300 dark:focus:border-zinc-700 outline-none transition-all"
+              className="w-full pl-12 pr-10 py-3 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-base font-medium text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 focus:border-zinc-300 dark:focus:border-zinc-700 outline-none transition-all"
             />
-            {searchTerm && (
-              <button 
-                onClick={() => { setSearchTerm(""); setActiveSearch(""); }}
-                className="absolute right-4 w-4.5 h-4.5 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-600 transition-colors"
-              >
-                <span className="text-[10px]">✕</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* 카드 사이 간격을 키웠습니다 (gap-12) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
         {filteredProjects.map((project, index) => (
           <Link 
             href={`/projects/${project.id}`} 
             key={`${project.id}-${index}`} 
-            className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-all"
+            className="group block"
           >
-            <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
-              {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
-            </div>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-[10px] font-bold bg-black dark:bg-zinc-50 text-white dark:text-zinc-950 px-2 py-0.5 rounded-full uppercase transition-colors">
+            {/* 이미지 영역 사이즈 키움 및 호버 텍스트 위치 수정 */}
+            <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden mb-5">
+              {project.thumbnail && (
+                <Image 
+                  src={project.thumbnail} 
+                  alt={project.title} 
+                  fill 
+                  sizes="(max-width: 768px) 100vw, 33vw" 
+                  className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                />
+              )}
+              
+              {/* 호버 오버레이: 제목(좌측하단), 날짜(우측하단) */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-6">
+                <span className="text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
                   {project.categoryName || "Mixed"}
                 </span>
-                
-                <div className="flex items-center gap-3 text-slate-400 dark:text-zinc-500">
-                  <div className="flex items-center gap-1">
-                    <Heart size={12} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
-                    <span className="text-[11px] font-bold">{project.likeCount || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle size={12} />
-                    <span className="text-[11px] font-bold">{project.commentCount || 0}</span>
-                  </div>
+                <span className="text-[11px] text-white/80 font-medium">
+                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ""}
+                </span>
+              </div>
+            </div>
+
+            {/* 하단 텍스트 사이즈 키움 */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex-1 pr-6">
+                <h2 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
+                  {project.title}
+                </h2>
+              </div>
+              
+              <div className="flex items-center gap-4 text-zinc-400 dark:text-zinc-500">
+                <div className="flex items-center gap-1.5">
+                  <Heart size={16} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
+                  <span className="text-sm font-bold">{project.likeCount || 0}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <MessageCircle size={16} />
+                  <span className="text-sm font-bold">{project.commentCount || 0}</span>
                 </div>
               </div>
-
-              <h2 className="text-xl font-bold mt-1 mb-2 uppercase line-clamp-1 text-zinc-900 dark:text-zinc-100">
-                {project.title}
-              </h2>
-              <p className="text-slate-500 dark:text-zinc-400 text-sm line-clamp-2 opacity-80 leading-relaxed">
-                {cleanDescription(project.description)}
-              </p>
             </div>
           </Link>
         ))}
 
         {hasMore && loading && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
-          <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 opacity-40">
-            <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />
-            <div className="p-6 space-y-4">
-              <Skeleton className="h-4 w-12 rounded-full dark:bg-zinc-800" />
-              <Skeleton className="h-6 w-3/4 dark:bg-zinc-800" />
-              <Skeleton className="h-3 w-full dark:bg-zinc-800" />
+          <div key={`sk-${i}`} className="space-y-5">
+            <Skeleton className="aspect-[4/3] w-full rounded-2xl dark:bg-zinc-900" />
+            <div className="flex justify-between items-center px-1">
+              <Skeleton className="h-6 w-1/2 rounded dark:bg-zinc-900" />
+              <Skeleton className="h-6 w-1/4 rounded dark:bg-zinc-900" />
             </div>
           </div>
         ))}
