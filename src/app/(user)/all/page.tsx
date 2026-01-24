@@ -123,15 +123,15 @@ function ProjectListContent() {
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
-        <h1 className="text-5xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
+        <h1 className="text-3xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
-        <div className="relative w-full md:w-80">
+        <div className="relative w-full md:w-64">
           <div className="relative flex items-center">
             <Search 
-              size={20} 
-              className="absolute left-4 text-zinc-900 dark:text-zinc-400 stroke-[2.5px]" 
+              size={16} 
+              className="absolute left-4 text-zinc-400 dark:text-zinc-500 stroke-[2.5px]" 
             />
             <input
               type="text"
@@ -139,13 +139,12 @@ function ProjectListContent() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="w-full pl-12 pr-10 py-3 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-base font-medium text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 focus:border-zinc-300 dark:focus:border-zinc-700 outline-none transition-all"
+              className="w-full pl-11 pr-10 py-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 focus:border-zinc-300 dark:focus:border-zinc-700 outline-none transition-all"
             />
           </div>
         </div>
       </div>
 
-      {/* 카드 사이 간격을 키웠습니다 (gap-12) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
         {filteredProjects.map((project, index) => (
           <Link 
@@ -153,7 +152,6 @@ function ProjectListContent() {
             key={`${project.id}-${index}`} 
             className="group block"
           >
-            {/* 이미지 영역 사이즈 키움 및 호버 텍스트 위치 수정 */}
             <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden mb-5">
               {project.thumbnail && (
                 <Image 
@@ -165,7 +163,6 @@ function ProjectListContent() {
                 />
               )}
               
-              {/* 호버 오버레이: 제목(좌측하단), 날짜(우측하단) */}
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-6">
                 <span className="text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
                   {project.categoryName || "Mixed"}
@@ -176,22 +173,22 @@ function ProjectListContent() {
               </div>
             </div>
 
-            {/* 하단 텍스트 사이즈 키움 */}
             <div className="flex items-center justify-between px-1">
               <div className="flex-1 pr-6">
-                <h2 className="text-lg font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
+                <h2 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
                   {project.title}
                 </h2>
               </div>
               
               <div className="flex items-center gap-4 text-zinc-400 dark:text-zinc-500">
                 <div className="flex items-center gap-1.5">
-                  <Heart size={16} className={project.likeCount > 0 ? "text-red-500 fill-red-500" : ""} />
-                  <span className="text-sm font-bold">{project.likeCount || 0}</span>
+                  {/* 💡 하트 아이콘의 색상 로직을 제거하여 무조건 동일한 선상 색상으로 유지 */}
+                  <Heart size={14} />
+                  <span className="text-xs font-bold">{project.likeCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <MessageCircle size={16} />
-                  <span className="text-sm font-bold">{project.commentCount || 0}</span>
+                  <MessageCircle size={14} />
+                  <span className="text-xs font-bold">{project.commentCount || 0}</span>
                 </div>
               </div>
             </div>
@@ -202,8 +199,8 @@ function ProjectListContent() {
           <div key={`sk-${i}`} className="space-y-5">
             <Skeleton className="aspect-[4/3] w-full rounded-2xl dark:bg-zinc-900" />
             <div className="flex justify-between items-center px-1">
-              <Skeleton className="h-6 w-1/2 rounded dark:bg-zinc-900" />
-              <Skeleton className="h-6 w-1/4 rounded dark:bg-zinc-900" />
+              <Skeleton className="h-5 w-1/2 rounded dark:bg-zinc-900" />
+              <Skeleton className="h-5 w-1/4 rounded dark:bg-zinc-900" />
             </div>
           </div>
         ))}
