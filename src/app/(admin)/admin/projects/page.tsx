@@ -6,15 +6,16 @@ import CategorySelect from "@/components/CategorySelect";
 export default async function AdminProjectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; q?: string; category?: string }>;
+  searchParams: Promise<{ page?: string; q?: string; category?: string; status?: string }>;
 }) {
-  const { page, q, category } = await searchParams;
+  const { page, q, category, status } = await searchParams; // 💡 status 추가
 
   const currentPage = Number(page) || 1;
   const limit = 10;
   const offset = (currentPage - 1) * limit;
   const searchTerm = q || "";
   const categoryId = category || "";
+  const statusFilter = status || ""; // 💡 status 필터값 상수에 할당
 
   // 1. 쿼리 빌드
   let countQuery = "SELECT COUNT(*) as count FROM Project WHERE 1=1";
@@ -38,14 +39,23 @@ export default async function AdminProjectsPage({
     queryParams.push(categoryId);
   }
 
+  // 💡 [추가] status 필터링 로직
+  if (statusFilter) {
+    countQuery += " AND status = ?";
+    dataQuery += " AND status = ?";
+    queryParams.push(statusFilter);
+  }
+
   // 2. 데이터 병렬 로드
   const [
     [allCountRes], 
+    [draftCountRes], // 💡 임시저장 총 개수 조회를 위한 추가
     [categoryStats], 
     [totalResult], 
     [projects]
   ]: any = await Promise.all([
     pool.query("SELECT COUNT(*) as count FROM Project"),
+    pool.query("SELECT COUNT(*) as count FROM Project WHERE status = 'DRAFT'"), // 💡 DRAFT 개수만 조회
     pool.query(`
       SELECT c.id, c.name, COUNT(p.id) as projectCount 
       FROM Category c 
@@ -58,6 +68,7 @@ export default async function AdminProjectsPage({
   ]);
 
   const absoluteTotal = allCountRes[0].count;
+  const draftTotal = draftCountRes[0].count; // 💡 임시저장 총 개수
   const filteredTotal = totalResult[0].count; 
   const totalPages = Math.ceil(filteredTotal / limit);
 
@@ -79,7 +90,6 @@ export default async function AdminProjectsPage({
 
       {/* --- 통계 카드 및 카테고리 필터 --- */}
       <div className="mb-8">
-        {/* 모바일 전용: 별도 클라이언트 컴포넌트로 분리하여 에러 해결 */}
         <CategorySelect 
           categoryStats={categoryStats} 
           categoryId={categoryId} 
@@ -91,17 +101,28 @@ export default async function AdminProjectsPage({
           <Link 
             href="/admin/projects"
             className={`p-4 rounded-2xl border transition shadow-sm ${
-              !categoryId ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
+              !categoryId && !statusFilter ? "bg-gray-900 text-white border-gray-900" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
             }`}
           >
-            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${!categoryId ? "opacity-60" : "text-slate-400"}`}>TOTAL</p>
+            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${!categoryId && !statusFilter ? "opacity-60" : "text-slate-400"}`}>TOTAL</p>
             <p className="text-2xl font-black">{absoluteTotal}</p>
+          </Link>
+
+          {/* 💡 임시저장 필터 카드 (클릭 시 status=DRAFT 필터 적용) */}
+          <Link 
+            href="/admin/projects?status=DRAFT"
+            className={`p-4 rounded-2xl border transition shadow-sm ${
+              statusFilter === 'DRAFT' ? "bg-amber-500 text-white border-amber-500 shadow-amber-100 shadow-lg" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
+            }`}
+          >
+            <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${statusFilter === 'DRAFT' ? "text-amber-100" : "text-amber-500"}`}>DRAFT</p>
+            <p className="text-2xl font-black">{draftTotal}</p>
           </Link>
 
           {categoryStats.map((stat: any) => (
             <Link 
               key={stat.id}
-              href={`/admin/projects?category=${stat.id}`}
+              href={`` + `/admin/projects?category=${stat.id}`}
               className={`p-4 rounded-2xl border transition shadow-sm ${
                 categoryId === String(stat.id) ? "border-black bg-slate-50 text-black" : "bg-white border-gray-100 text-gray-800 hover:border-gray-300"
               }`}
@@ -125,6 +146,8 @@ export default async function AdminProjectsPage({
             placeholder="SEARCH TITLE..." 
             className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-black outline-none bg-gray-50 font-medium"
           />
+          {/* status가 활성화되어 있을 때 검색 시에도 유지되도록 hidden input 추가 */}
+          {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
           <button className="w-full md:w-auto bg-black text-white px-8 py-2.5 rounded-xl text-xs hover:bg-zinc-800 transition font-black uppercase tracking-widest">
             Search
           </button>
@@ -142,7 +165,7 @@ export default async function AdminProjectsPage({
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
             <Link
               key={p}
-              href={`/admin/projects?page=${p}${searchTerm ? `&q=${searchTerm}` : ""}${categoryId ? `&category=${categoryId}` : ""}`}
+              href={`/admin/projects?page=${p}${searchTerm ? `&q=${searchTerm}` : ""}${categoryId ? `&category=${categoryId}` : ""}${statusFilter ? `&status=${statusFilter}` : ""}`}
               className={`w-10 h-10 flex items-center justify-center rounded-xl text-[11px] font-black transition ${
                 p === currentPage
                   ? "bg-black text-white shadow-xl shadow-slate-200"

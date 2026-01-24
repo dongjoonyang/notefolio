@@ -7,9 +7,10 @@ import { pool } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // 💡 showInAll 추가
-    const { title, content, categoryName, thumbnail, isVisible, showInAll } = body;
+    // 💡 status 추가
+    const { title, content, categoryName, thumbnail, isVisible, showInAll, status } = body;
 
+    // 💡 임시저장(DRAFT)일 때는 제목만 있어도 저장 가능하도록 필수값 체크 완화 가능
     if (!title || !categoryName) {
       return NextResponse.json({ error: "제목과 카테고리는 필수입니다." }, { status: 400 });
     }
@@ -29,12 +30,14 @@ export async function POST(request: Request) {
     const newOrder = (minOrderResult[0].minOrder !== null ? minOrderResult[0].minOrder : 0) - 1;
 
     const finalVisibility = isVisible !== undefined ? (isVisible ? 1 : 0) : 1;
-    const finalShowInAll = showInAll !== undefined ? (showInAll ? 1 : 0) : 1; // 💡 기본값 1
+    const finalShowInAll = showInAll !== undefined ? (showInAll ? 1 : 0) : 1;
+    // 💡 status 기본값 설정 (전달되지 않으면 DRAFT)
+    const finalStatus = status || 'DRAFT';
 
-    // 💡 INSERT 문에 showInAll 컬럼과 값 추가
+    // 💡 INSERT 문에 status 컬럼 추가
     const [result]: any = await pool.query(
-      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible, showInAll) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [title, content, categoryId, thumbnail, newOrder, finalVisibility, finalShowInAll]
+      "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible, showInAll, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [title, content, categoryId, thumbnail, newOrder, finalVisibility, finalShowInAll, finalStatus]
     );
 
     return NextResponse.json({ success: true, id: result.insertId });
@@ -51,15 +54,16 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get("limit") || "6"); 
   const category = searchParams.get("category");
   const search = searchParams.get("search");
+  const isAdmin = searchParams.get("isAdmin") === "true"; // 💡 관리자 여부 확인용 파라미터 추가 제안
   const offset = (page - 1) * limit;
 
   try {
-    // 💡 SELECT 절에 p.showInAll 를 추가했습니다.
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
         p.isVisible, 
         p.showInAll, 
+        p.status,  /* 💡 status 선택 추가 */
         c.name as categoryName, 
         IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder,
@@ -71,6 +75,12 @@ export async function GET(request: Request) {
     `;
     
     const params: any[] = [];
+
+    // 💡 중요: 관리자가 아니라면 'PUBLISHED' 상태인 글만 가져옵니다.
+    if (!isAdmin) {
+      query += ` AND p.status = 'PUBLISHED'`;
+    }
+
     if (category && category !== "all") {
       query += ` AND c.name = ?`;
       params.push(category);

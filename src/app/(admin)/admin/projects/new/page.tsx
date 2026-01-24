@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff, LayoutGrid, LayoutList, ChevronRight } from "lucide-react";
+import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff, LayoutGrid, LayoutList, ChevronRight, FileEdit } from "lucide-react"; // 💡 FileEdit 아이콘 추가
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -113,22 +113,52 @@ export default function NewProjectPage() {
     } catch (error) { alert("업로드 중 오류 발생"); } finally { setIsUploading(false); }
   };
 
-  const handleSubmit = async () => {
-    if (!title || !content || !category) { alert("모든 필드를 입력해주세요."); return; }
+  // 💡 제출 로직 수정: 비공개 저장 확인 로직 추가
+  const handleSubmit = async (targetStatus: 'DRAFT' | 'PUBLISHED') => {
+    if (targetStatus === 'PUBLISHED') {
+      if (!title || !content || !category) { 
+        alert("게시를 위해 제목, 본문, 카테고리를 모두 입력해주세요."); 
+        return; 
+      }
+
+      // 💡 [추가] 게시하기를 눌렀는데 '웹사이트 공개'가 꺼져 있는 경우 확인창
+      if (!isVisible) {
+        const confirmSave = confirm("현재 '웹사이트 공개'가 비활성화(Private)되어 있습니다. 이대로 비공개 저장하시겠습니까?");
+        if (!confirmSave) return; // '취소' 클릭 시 중단
+      }
+    } else {
+      if (!title) { 
+        alert("임시저장을 위해 제목은 입력해야 합니다."); 
+        return; 
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, content, categoryName: category, thumbnail, isVisible, showInAll: isVisible ? showInAll : false }),
+        body: JSON.stringify({ 
+          title, 
+          content, 
+          categoryName: category, 
+          thumbnail, 
+          // 💡 DRAFT일 때는 토글 상태와 상관없이 비공개(false) 처리
+          isVisible: targetStatus === 'PUBLISHED' ? isVisible : false, 
+          showInAll: targetStatus === 'PUBLISHED' ? showInAll : false,
+          status: targetStatus 
+        }),
       });
-      if (response.ok) { alert("등록 성공!"); router.push("/admin/projects"); router.refresh(); }
+      if (response.ok) { 
+        alert(targetStatus === 'DRAFT' ? "임시저장 되었습니다." : "등록 성공!"); 
+        router.push("/admin/projects"); 
+        router.refresh(); 
+      }
     } catch (error) { alert("네트워크 오류"); } finally { setIsSubmitting(false); }
   };
 
   return (
     <div className="lg:h-screen flex flex-col bg-white lg:overflow-hidden">
-      {/* 1. 헤더 */}
       <header className="shrink-0 w-full bg-white border-b border-zinc-200 h-16 flex items-center justify-between px-6 z-[100]">
         <div className="flex items-center gap-4">
           <Link href="/admin/projects" className="p-2 hover:bg-zinc-100 rounded-full transition-all text-zinc-500 hover:text-zinc-900">
@@ -139,22 +169,30 @@ export default function NewProjectPage() {
             <h1 className="text-base font-bold text-zinc-900 leading-none">새 프로젝트 작성</h1>
           </div>
         </div>
-        <button 
-          onClick={handleSubmit}
-          disabled={isSubmitting || isUploading}
-          className="bg-zinc-900 text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-xs"
-        >
-          {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-          {isSubmitting ? "저장 중..." : "게시하기"}
-        </button>
+        
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => handleSubmit('DRAFT')}
+            disabled={isSubmitting || isUploading}
+            className="px-4 py-2.5 rounded-full flex items-center gap-2 hover:bg-zinc-100 transition-all disabled:opacity-50 text-zinc-600 font-bold text-xs border border-zinc-200"
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <FileEdit size={16} />}
+            임시저장
+          </button>
+          
+          <button 
+            onClick={() => handleSubmit('PUBLISHED')}
+            disabled={isSubmitting || isUploading}
+            className="bg-zinc-900 text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-xs"
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+            {isSubmitting ? "저장 중..." : "게시하기"}
+          </button>
+        </div>
       </header>
 
-      {/* 메인 레이아웃 */}
       <main className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden bg-white">
-        
-        {/* 본문 에디터 영역 */}
         <div className="flex-1 flex flex-col bg-white lg:overflow-hidden min-h-0">
-          {/* 제목 영역 */}
           <div className="shrink-0 bg-white px-6 lg:px-12 h-24 lg:h-32 flex items-center border-b border-zinc-50">
             <input
               type="text"
@@ -165,7 +203,6 @@ export default function NewProjectPage() {
             />
           </div>
 
-          {/* 에디터 영역 (컨테이너 높이 고정) */}
           <div className="flex-1 flex flex-col relative overflow-hidden min-h-[400px] lg:min-h-0">
             <ReactQuillEditor
               ref={quillRef}
@@ -178,7 +215,6 @@ export default function NewProjectPage() {
           </div>
         </div>
 
-        {/* 우측 설정 사이드바 */}
         <aside className="w-full lg:w-80 shrink-0 bg-zinc-50/50 lg:border-l border-zinc-200 lg:overflow-y-auto">
           <div className="flex flex-col divide-y divide-zinc-200 min-h-full">
             <section className="p-6 space-y-5">
@@ -224,7 +260,6 @@ export default function NewProjectPage() {
 
             <section className="p-6 space-y-3 pb-20 lg:pb-6">
               <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status & Visibility</label>
-              
               <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-zinc-200 cursor-pointer"
                    onClick={() => { setIsVisible(!isVisible); if(isVisible) setShowInAll(false); }}>
                 <div className="flex items-center gap-3">
@@ -257,53 +292,12 @@ export default function NewProjectPage() {
       </main>
 
       <style jsx global>{`
-        /* 툴바 고정 및 에디터 내부 스크롤 핵심 설정 */
         .editor-custom { border: none !important; display: flex; flex-direction: column; }
-        
-        .editor-custom .ql-toolbar {
-          flex-shrink: 0;
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          background: white !important; 
-          border-top: none !important;
-          border-bottom: 1px solid #f4f4f5 !important;
-          border-left: none !important;
-          border-right: none !important;
-          padding: 10px 24px lg:padding: 10px 32px !important;
-        }
-        
-        .editor-custom .ql-container {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          border: none !important;
-          font-family: inherit;
-          font-size: 16px;
-          overflow: hidden; /* 컨테이너 밖으로 내용 안 넘치게 고정 */
-        }
-        
-        /* PC와 모바일 모두 내부 스크롤 강제 */
-        .editor-custom .ql-editor { 
-          flex: 1;
-          overflow-y: auto !important; /* 내부 스크롤 생성 */
-          padding: 30px 24px lg:padding: 60px 32px !important; 
-          color: #18181b; 
-          line-height: 1.8; 
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* 데스크톱에서 부모 높이 제어 */
-        @media (min-width: 1024px) {
-          html, body { overflow: hidden; height: 100%; }
-          .editor-custom .ql-editor { height: 100%; }
-        }
-
-        /* 모바일에서 브라우저 스크롤은 유지하되 에디터 영역 자체 스크롤 */
-        @media (max-width: 1023px) {
-          .editor-custom .ql-editor { max-height: 60vh; } /* 모바일에서 에디터 영역이 너무 길어지지 않게 조절 */
-        }
-
+        .editor-custom .ql-toolbar { flex-shrink: 0; position: sticky; top: 0; z-index: 50; background: white !important; border-top: none !important; border-bottom: 1px solid #f4f4f5 !important; border-left: none !important; border-right: none !important; padding: 10px 24px lg:padding: 10px 32px !important; }
+        .editor-custom .ql-container { flex: 1; display: flex; flex-direction: column; border: none !important; font-family: inherit; font-size: 16px; overflow: hidden; }
+        .editor-custom .ql-editor { flex: 1; overflow-y: auto !important; padding: 30px 24px lg:padding: 60px 32px !important; color: #18181b; line-height: 1.8; -webkit-overflow-scrolling: touch; }
+        @media (min-width: 1024px) { html, body { overflow: hidden; height: 100%; } .editor-custom .ql-editor { height: 100%; } }
+        @media (max-width: 1023px) { .editor-custom .ql-editor { max-height: 60vh; } }
         .editor-custom .ql-editor::-webkit-scrollbar { width: 6px; }
         .editor-custom .ql-editor::-webkit-scrollbar-thumb { background-color: #e4e4e7; border-radius: 10px; }
         .ql-tooltip { z-index: 110 !important; }

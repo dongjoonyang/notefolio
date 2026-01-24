@@ -4,7 +4,7 @@ import { pool } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { del } from '@vercel/blob';
-import { headers } from "next/headers"; // 💡 IP 조회를 위해 추가
+import { headers } from "next/headers";
 
 // 1. 프로젝트 생성
 export async function createProject(formData: FormData) {
@@ -13,14 +13,14 @@ export async function createProject(formData: FormData) {
   const categoryId = formData.get("categoryId");
   const thumbnail = formData.get("thumbnail");
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
-  // 💡 [추가] 전체 페이지 노출 여부 데이터 가져오기 (기본값 1)
   const showInAll = formData.get("showInAll") === "0" ? 0 : 1;
+  const status = formData.get("status") || "PUBLISHED"; // 💡 [추가] 상태값 가져오기 (기본값 PUBLISHED)
 
   try {
-    // 💡 [수정] showInAll 컬럼 추가
+    // 💡 [수정] status 컬럼 추가하여 INSERT
     await pool.query(
-      "INSERT INTO Project (title, description, categoryId, thumbnail, isVisible, showInAll) VALUES (?, ?, ?, ?, ?, ?)",
-      [title, description, categoryId, thumbnail, isVisible, showInAll]
+      "INSERT INTO Project (title, description, categoryId, thumbnail, isVisible, showInAll, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [title, description, categoryId, thumbnail, isVisible, showInAll, status]
     );
   } catch (error) {
     console.error("Create Error:", error);
@@ -40,8 +40,8 @@ export async function updateProject(id: number, formData: FormData) {
   const categoryId = formData.get("categoryId");
   const newThumbnail = formData.get("thumbnail") as string;
   const isVisible = formData.get("isVisible") === "0" ? 0 : 1;
-  // 💡 [추가] 전체 페이지 노출 여부 데이터 가져오기
   const showInAll = formData.get("showInAll") === "0" ? 0 : 1;
+  const status = formData.get("status"); // 💡 [추가] 업데이트할 상태값 가져오기
 
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -76,10 +76,10 @@ export async function updateProject(id: number, formData: FormData) {
       }
     }
 
-    // 💡 [수정] showInAll 컬럼 업데이트 추가
+    // 💡 [수정] status 컬럼 업데이트 쿼리에 추가
     await pool.query(
-      "UPDATE Project SET title = ?, description = ?, categoryId = ?, thumbnail = ?, isVisible = ?, showInAll = ? WHERE id = ?",
-      [title, description, categoryId, newThumbnail, isVisible, showInAll, id]
+      "UPDATE Project SET title = ?, description = ?, categoryId = ?, thumbnail = ?, isVisible = ?, showInAll = ?, status = ? WHERE id = ?",
+      [title, description, categoryId, newThumbnail, isVisible, showInAll, status, id]
     );
 
     revalidatePath("/admin/projects");
@@ -95,7 +95,9 @@ export async function updateProject(id: number, formData: FormData) {
   redirect("/admin/projects");
 }
 
-// 3. 프로젝트 삭제 (기존 유지)
+// --- 이하는 기존과 동일 (수정 없음) ---
+
+// 3. 프로젝트 삭제
 export async function deleteProject(id: number) {
   try {
     const [rows]: any = await pool.query(
@@ -138,7 +140,7 @@ export async function deleteProject(id: number) {
   }
 }
 
-// 4. 프로젝트 일괄 삭제 (기존 유지)
+// 4. 프로젝트 일괄 삭제
 export async function deleteMultipleProjects(ids: number[]) {
   try {
     const token = process.env.BLOB_READ_WRITE_TOKEN;
@@ -176,9 +178,7 @@ export async function deleteMultipleProjects(ids: number[]) {
   }
 }
 
-/**
- * 5. 프로젝트 좋아요 토글 (기존 유지)
- */
+// 5. 프로젝트 좋아요 토글
 export async function toggleProjectLike(projectId: number) {
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";
@@ -210,9 +210,7 @@ export async function toggleProjectLike(projectId: number) {
   }
 }
 
-/**
- * 6. 좋아요 상태 및 개수 가져오기 (기존 유지)
- */
+// 6. 좋아요 상태 및 개수 가져오기
 export async function getLikeStatus(projectId: number) {
   const headerList = await headers();
   const ip = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";

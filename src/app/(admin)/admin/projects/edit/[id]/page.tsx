@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff, LayoutGrid, LayoutList } from "lucide-react";
+import { Save, Image as ImageIcon, X, Loader2, ArrowLeft, Eye, EyeOff, LayoutGrid, LayoutList, FileEdit } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import type ReactQuill from "react-quill-new";
@@ -43,6 +43,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
   const [thumbnail, setThumbnail] = useState(""); 
   const [isVisible, setIsVisible] = useState(true);
   const [showInAll, setShowInAll] = useState(true);
+  const [status, setStatus] = useState("DRAFT");
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,6 +114,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           setThumbnail(projData.thumbnail || "");
           setIsVisible(Number(projData.isVisible) !== 0);
           setShowInAll(Number(projData.showInAll) !== 0);
+          setStatus(projData.status || "DRAFT");
         }
       } catch (err) { console.error(err); } finally { setIsLoading(false); }
     };
@@ -130,8 +132,26 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     } catch (error) { alert("이미지 업로드 오류"); } finally { setIsUploading(false); }
   };
 
-  const handleUpdate = async () => {
-    if (!title.trim() || !category) { alert("제목과 카테고리를 확인해주세요."); return; }
+  // 💡 [수정] handleUpdate: 비공개 확인 로직 추가
+  const handleUpdate = async (targetStatus: 'DRAFT' | 'PUBLISHED') => {
+    if (targetStatus === 'PUBLISHED') {
+      if (!title.trim() || !category) { 
+        alert("제목과 카테고리를 확인해주세요."); 
+        return; 
+      }
+      
+      // 💡 [추가] '웹사이트 공개'가 꺼져 있을 때 경고창
+      if (!isVisible) {
+        const confirmSave = confirm("현재 '웹사이트 공개'가 비활성화(Private)되어 있습니다. 이대로 비공개 저장하시겠습니까?");
+        if (!confirmSave) return;
+      }
+    } else {
+      if (!title.trim()) { 
+        alert("임시저장을 위해 제목을 입력해주세요."); 
+        return; 
+      }
+    }
+    
     setIsSubmitting(true);
     try {
       const formData = new FormData();
@@ -139,10 +159,14 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       formData.append("description", content);
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
-      formData.append("isVisible", isVisible ? "1" : "0");
-      formData.append("showInAll", showInAll ? "1" : "0");
+      
+      // DRAFT일 때는 토글 상태와 상관없이 비공개(0) 처리
+      formData.append("isVisible", targetStatus === 'PUBLISHED' ? (isVisible ? "1" : "0") : "0");
+      formData.append("showInAll", targetStatus === 'PUBLISHED' ? (showInAll ? "1" : "0") : "0");
+      formData.append("status", targetStatus);
+      
       await updateProject(Number(id), formData);
-      alert('수정되었습니다!');
+      alert(targetStatus === 'DRAFT' ? '임시저장 되었습니다.' : '수정되었습니다!');
       router.push('/admin/projects');
       router.refresh();
     } catch (err: any) {
@@ -154,33 +178,43 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="lg:h-screen flex flex-col bg-white lg:overflow-hidden">
-      {/* 1. 헤더 */}
       <header className="shrink-0 w-full bg-white border-b border-zinc-200 h-16 flex items-center justify-between px-6 z-[100]">
         <div className="flex items-center gap-4">
           <button onClick={() => router.back()} className="p-2 hover:bg-zinc-100 rounded-full transition-all text-zinc-500 hover:text-zinc-900">
             <ArrowLeft size={20} />
           </button>
           <div className="flex flex-col">
-            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Editor</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Editor</span>
+              {status === 'DRAFT' && <span className="text-[9px] font-bold bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded-md uppercase tracking-tight">Draft</span>}
+            </div>
             <h1 className="text-base font-bold text-zinc-900 leading-none">프로젝트 수정</h1>
           </div>
         </div>
-        <button 
-          onClick={handleUpdate}
-          disabled={isSubmitting || isUploading}
-          className="bg-zinc-900 text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-xs"
-        >
-          {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-          {isSubmitting ? "저장 중..." : "업데이트 완료"}
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => handleUpdate('DRAFT')}
+            disabled={isSubmitting || isUploading}
+            className="px-4 py-2.5 rounded-full flex items-center gap-2 hover:bg-zinc-100 transition-all disabled:opacity-50 text-zinc-600 font-bold text-xs border border-zinc-200"
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <FileEdit size={16} />}
+            {status === 'DRAFT' ? "임시저장 유지" : "임시저장으로 변경"}
+          </button>
+
+          <button 
+            onClick={() => handleUpdate('PUBLISHED')}
+            disabled={isSubmitting || isUploading}
+            className="bg-zinc-900 text-white px-5 py-2.5 rounded-full flex items-center gap-2 hover:bg-black transition-all disabled:bg-zinc-300 font-bold text-xs"
+          >
+            {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
+            {status === 'DRAFT' ? "정식 게시하기" : "업데이트 완료"}
+          </button>
+        </div>
       </header>
 
-      {/* 메인 레이아웃 */}
       <main className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden bg-white">
-        
-        {/* 본문 에디터 영역 */}
         <div className="flex-1 flex flex-col bg-white lg:overflow-hidden min-h-0">
-          {/* 제목 영역 */}
           <div className="shrink-0 bg-white px-6 lg:px-12 h-24 lg:h-32 flex items-center border-b border-zinc-50">
             <input
               type="text"
@@ -191,7 +225,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
             />
           </div>
 
-          {/* 에디터 영역 (컨테이너 높이 고정) */}
           <div className="flex-1 flex flex-col relative overflow-hidden min-h-[400px] lg:min-h-0">
             <ReactQuillEditor
               ref={quillRef}
@@ -204,7 +237,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
 
-        {/* 우측 설정 사이드바 */}
         <aside className="w-full lg:w-80 shrink-0 bg-zinc-50/50 lg:border-l border-zinc-200 lg:overflow-y-auto">
           <div className="flex flex-col divide-y divide-zinc-200 min-h-full">
             <section className="p-6 space-y-5">
@@ -251,7 +283,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
 
             <section className="p-6 space-y-3 pb-20 lg:pb-6">
               <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">Status & Visibility</label>
-              
               <div className="flex items-center justify-between p-3.5 bg-white rounded-xl border border-zinc-200 cursor-pointer"
                    onClick={() => { setIsVisible(!isVisible); if(isVisible) setShowInAll(false); }}>
                 <div className="flex items-center gap-3">
@@ -284,51 +315,12 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       </main>
 
       <style jsx global>{`
-        /* 툴바 고정 및 에디터 내부 스크롤 핵심 설정 */
         .editor-custom { border: none !important; display: flex; flex-direction: column; }
-        
-        .editor-custom .ql-toolbar {
-          flex-shrink: 0;
-          position: sticky;
-          top: 0;
-          z-index: 50;
-          background: white !important; 
-          border-top: none !important;
-          border-bottom: 1px solid #f4f4f5 !important;
-          border-left: none !important;
-          border-right: none !important;
-          padding: 10px 24px lg:padding: 10px 32px !important;
-        }
-        
-        .editor-custom .ql-container {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          border: none !important;
-          font-family: inherit;
-          font-size: 16px;
-          overflow: hidden;
-        }
-        
-        .editor-custom .ql-editor { 
-          flex: 1;
-          overflow-y: auto !important;
-          padding: 30px 24px lg:padding: 60px 32px !important; 
-          color: #18181b; 
-          line-height: 1.8; 
-          -webkit-overflow-scrolling: touch;
-        }
-
-        @media (min-width: 1024px) {
-          html, body { overflow: hidden; height: 100%; }
-          .editor-custom .ql-editor { height: 100%; }
-        }
-
-        @media (max-width: 1023px) {
-          html, body { overflow: auto; height: auto; }
-          .editor-custom .ql-editor { max-height: 60vh; }
-        }
-
+        .editor-custom .ql-toolbar { flex-shrink: 0; position: sticky; top: 0; z-index: 50; background: white !important; border-top: none !important; border-bottom: 1px solid #f4f4f5 !important; border-left: none !important; border-right: none !important; padding: 10px 24px lg:padding: 10px 32px !important; }
+        .editor-custom .ql-container { flex: 1; display: flex; flex-direction: column; border: none !important; font-family: inherit; font-size: 16px; overflow: hidden; }
+        .editor-custom .ql-editor { flex: 1; overflow-y: auto !important; padding: 30px 24px lg:padding: 60px 32px !important; color: #18181b; line-height: 1.8; -webkit-overflow-scrolling: touch; }
+        @media (min-width: 1024px) { html, body { overflow: hidden; height: 100%; } .editor-custom .ql-editor { height: 100%; } }
+        @media (max-width: 1023px) { html, body { overflow: auto; height: auto; } .editor-custom .ql-editor { max-height: 60vh; } }
         .editor-custom .ql-editor::-webkit-scrollbar { width: 6px; }
         .editor-custom .ql-editor::-webkit-scrollbar-thumb { background-color: #e4e4e7; border-radius: 10px; }
         .ql-tooltip { z-index: 110 !important; }

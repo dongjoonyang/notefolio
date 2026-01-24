@@ -11,7 +11,6 @@ import { deleteMultipleProjects } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 
 export default function AdminProjectList({ projects: initialProjects }: { projects: any[] }) {
-  // 💡 데이터를 상태(projects)로 관리해야 실시간으로 화면이 바뀝니다.
   const [projects, setProjects] = useState(initialProjects);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -21,7 +20,6 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
     setProjects(initialProjects);
   }, [initialProjects]);
 
-  // 💡 Visible 토글이 클릭되었을 때 호출될 함수
   const handleVisibleChange = (id: number, newVisible: number) => {
     setProjects(prev =>
       prev.map(p => (p.id === id ? { ...p, isVisible: newVisible } : p))
@@ -51,14 +49,6 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}. ${month}. ${day}.`;
   };
 
   return (
@@ -100,7 +90,17 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                   {project.thumbnail ? <Image src={project.thumbnail} alt="thumb" fill className="object-cover" /> : <div className="text-[10px] text-slate-300 font-bold flex items-center justify-center h-full">NO IMG</div>}
                 </div>
               </td>
-              <td className="px-6 py-4 font-bold text-slate-800">{project.title}</td>
+              <td className="px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-slate-800">{project.title}</span>
+                  {/* 💡 데스크탑 임시저장 배지 추가 */}
+                  {project.status === 'DRAFT' && (
+                    <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[9px] font-black uppercase tracking-tighter shrink-0">
+                      Draft
+                    </span>
+                  )}
+                </div>
+              </td>
               <td className="px-6 py-4"><span className="text-[10px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter bg-slate-100 text-slate-600">{project.categoryName || "UNCATEGORIZED"}</span></td>
               <td className="px-6 py-4">
                 <div className="flex flex-col gap-2">
@@ -109,7 +109,7 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                     <ProjectVisibleToggle 
                       id={project.id} 
                       initialVisible={project.isVisible} 
-                      onStatusChange={(val) => handleVisibleChange(project.id, val)} // 💡 실시간 연동 핵심
+                      onStatusChange={(val) => handleVisibleChange(project.id, val)}
                     />
                   </div>
                   <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                     <ProjectShowInAllToggle 
                       id={project.id} 
                       initialShowInAll={project.showInAll} 
-                      isParentVisible={project.isVisible} // 💡 위에서 바뀐 상태가 즉시 전달됨
+                      isParentVisible={project.isVisible}
                     />
                   </div>
                 </div>
@@ -144,9 +144,18 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest truncate">{project.categoryName || "UNCATEGORIZED"}</p>
-                <h4 className="font-bold text-slate-800 text-sm leading-tight line-clamp-2 uppercase">{project.title}</h4>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <h4 className="font-bold text-slate-800 text-sm leading-tight uppercase line-clamp-2">{project.title}</h4>
+                  {/* 💡 모바일 임시저장 배지 추가 */}
+                  {project.status === 'DRAFT' && (
+                    <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[8px] font-black uppercase tracking-tighter shrink-0">
+                      Draft
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
+            {/* 하단 토글/버튼 영역 유지 */}
             <div className="flex items-center justify-between pl-8">
               <div className="flex items-center gap-5 scale-90 origin-left">
                 <div className="flex flex-col gap-1">
