@@ -8,9 +8,6 @@ import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
 import { Heart, MessageCircle } from "lucide-react";
 
-// 💡 화면 전체를 덮는 Overlay 대신, 투명하게 로딩 아이콘만 띄우거나 
-// 아래에서 스켈레톤이 보일 것이므로 이 컴포넌트는 사실상 필요 없게 됩니다.
-// 하지만 안전을 위해 렉을 유발하던 배경색과 블러만 제거한 버전입니다.
 function LoadingOverlay() {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none">
@@ -82,6 +79,24 @@ function ProjectListContent() {
     }
   }, [page, activeSearch, categoryParam, loading]);
 
+  // 💡 [수정됨] 필터링된 프로젝트 리스트 정의
+  const filteredProjects = projects.filter((project) => {
+    const isVisible = Number(project.isVisible) !== 0;
+    const categoryVisible = Number(project.categoryIsVisible) !== 0;
+    const showInAll = Number(project.showInAll) !== 0;
+    if (!isVisible || !categoryVisible) return false;
+    if (categoryParam === "all") return showInAll;
+    return true;
+  });
+
+  // ✨ [신규 추가] 비노출 게시물 때문에 화면이 빌 경우 다음 페이지를 자동으로 호출하는 로직
+  useEffect(() => {
+    // 로딩 중이 아니고, 더 가져올 데이터가 있는데, 화면에 보이는게 6개 미만이라면 즉시 다음 호출
+    if (!loading && hasMore && projects.length > 0 && filteredProjects.length < 6) {
+      fetchProjects(false);
+    }
+  }, [filteredProjects.length, hasMore, loading, fetchProjects, projects.length]);
+
   useEffect(() => {
     fetchProjects(true);
   }, [categoryParam, activeSearch]);
@@ -105,19 +120,9 @@ function ProjectListContent() {
     return () => observer.disconnect();
   }, [hasMore, loading, fetchProjects]);
 
-  const filteredProjects = projects.filter((project) => {
-    const isVisible = Number(project.isVisible) !== 0;
-    const categoryVisible = Number(project.categoryIsVisible) !== 0;
-    const showInAll = Number(project.showInAll) !== 0;
-    if (!isVisible || !categoryVisible) return false;
-    if (categoryParam === "all") return showInAll;
-    return true;
-  });
-
   return (
     <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
-      {/* 💡 화면을 가리지 않는 로더 (스켈레톤과 함께 보임) */}
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -181,7 +186,6 @@ function ProjectListContent() {
           </Link>
         ))}
 
-        {/* --- ✨ 스켈레톤 로직 복구 --- */}
         {hasMore && loading && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
           <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
             <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />
