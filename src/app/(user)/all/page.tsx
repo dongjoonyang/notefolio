@@ -118,8 +118,8 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    /* 💡 Navbar와 동일하게 px-6으로 수정하고 py-10으로 상하 여백만 유지했습니다. */
-    <main className="max-w-7xl mx-auto px-6 py-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+    /* 💡 pt-20을 적용하여 상단 여백을 더 확보했습니다. */
+    <main className="max-w-7xl mx-auto px-6 pt-20 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
@@ -159,7 +159,6 @@ function ProjectListContent() {
           <Link 
             href={`/projects/${project.id}`} 
             key={`${project.id}-${index}`} 
-            /* 💡 shadow-lg 제거하여 깔끔한 스타일로 변경 (그림자 영역 제거 요청 반영) */
             className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-all"
           >
             <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
