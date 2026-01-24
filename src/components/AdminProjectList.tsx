@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, Loader2, CheckSquare, Square } from "lucide-react";
+import { Trash2, Loader2, CheckSquare, Square, Pencil } from "lucide-react"; // 💡 Pencil 아이콘 추가
 import ProjectVisibleToggle from "@/components/ProjectVisibleToggle";
 import ProjectShowInAllToggle from "@/components/ProjectShowInAllToggle";
 import DeleteButton from "@/components/DeleteButton";
@@ -93,7 +93,6 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-800">{project.title}</span>
-                  {/* 💡 데스크탑 임시저장 배지 추가 */}
                   {project.status === 'DRAFT' && (
                     <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[9px] font-black uppercase tracking-tighter shrink-0">
                       Draft
@@ -113,7 +112,7 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                     />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold text-slate-400 w-12">ALL WORKS</span>
+                    <span className="text-[9px] font-bold text-slate-400 w-12">ALL</span>
                     <ProjectShowInAllToggle 
                       id={project.id} 
                       initialShowInAll={project.showInAll} 
@@ -123,8 +122,11 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                 </div>
               </td>
               <td className="px-6 py-4 text-right">
-                <div className="flex justify-end gap-6 items-center text-[11px] font-black uppercase tracking-widest">
-                  <Link href={`/admin/projects/edit/${project.id}`} className="text-slate-400 hover:text-black">EDIT</Link>
+                <div className="flex justify-end gap-6 items-center">
+                  {/* 💡 EDIT 텍스트를 아이콘으로 교체 */}
+                  <Link href={`/admin/projects/edit/${project.id}`} className="text-slate-400 hover:text-black">
+                    <Pencil size={18} />
+                  </Link>
                   <DeleteButton id={project.id} />
                 </div>
               </td>
@@ -146,7 +148,6 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                 <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest truncate">{project.categoryName || "UNCATEGORIZED"}</p>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <h4 className="font-bold text-slate-800 text-sm leading-tight uppercase line-clamp-2">{project.title}</h4>
-                  {/* 💡 모바일 임시저장 배지 추가 */}
                   {project.status === 'DRAFT' && (
                     <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-600 text-[8px] font-black uppercase tracking-tighter shrink-0">
                       Draft
@@ -155,7 +156,6 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                 </div>
               </div>
             </div>
-            {/* 하단 토글/버튼 영역 유지 */}
             <div className="flex items-center justify-between pl-8">
               <div className="flex items-center gap-5 scale-90 origin-left">
                 <div className="flex flex-col gap-1">
@@ -176,7 +176,10 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                 </div>
               </div>
               <div className="flex gap-4 items-center">
-                <Link href={`/admin/projects/edit/${project.id}`} className="text-[10px] font-black text-slate-400 hover:text-black uppercase tracking-widest">EDIT</Link>
+                {/* 💡 EDIT 텍스트를 아이콘으로 교체 */}
+                <Link href={`/admin/projects/edit/${project.id}`} className="text-slate-400 hover:text-black">
+                  <Pencil size={18} />
+                </Link>
                 <DeleteButton id={project.id} />
               </div>
             </div>
