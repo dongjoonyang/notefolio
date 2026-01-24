@@ -57,16 +57,16 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
 
   const showAdminMenu = isMounted && isAdmin;
 
-  // 💡 테마 토글 함수
   const toggleTheme = (e: React.MouseEvent) => {
     e.stopPropagation(); 
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
+  // 💡 border-b-2 제거됨 (motion으로 대체)
   const getLinkStyle = (isActive: boolean) => 
-    `flex items-center h-full px-1 transition-all duration-200 ${
+    `relative flex items-center h-full px-1 transition-all duration-200 ${
       isActive 
-        ? "text-zinc-900 dark:text-zinc-50 font-bold border-b-2 border-zinc-900 dark:border-zinc-50" 
+        ? "text-zinc-900 dark:text-zinc-50 font-bold" 
         : "text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-300"
     }`;
 
@@ -74,20 +74,37 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
     `block text-2xl font-black py-4 ${isActive ? "text-zinc-900 dark:text-zinc-50" : "text-zinc-300 dark:text-zinc-700"}`;
 
   return (
-    <nav className="border-b border-zinc-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 sticky top-0 z-[60] shadow-sm transition-colors duration-300">
+    <nav className="bg-white dark:bg-zinc-950 sticky top-0 z-[60] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-12 h-full">
           <Link href="/" className="font-black text-xl tracking-tighter z-[70] text-zinc-900 dark:text-zinc-50">ONOFF Studio</Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
-            <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
+            <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>
+              All Works
+              {pathname === '/all' && !currentCategory && (
+                <motion.div 
+                  layoutId="activeTab"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900 dark:bg-zinc-50"
+                />
+              )}
+            </Link>
             {categories
               ?.filter((cat: any) => Number(cat.isVisible) !== 0)
-              .map((cat: any) => (
-                <Link key={cat.id} href={`/all?category=${cat.name}`} className={getLinkStyle(currentCategory === cat.name)}>
-                  {cat.name}
-                </Link>
-              ))}
+              .map((cat: any) => {
+                const isActive = currentCategory === cat.name;
+                return (
+                  <Link key={cat.id} href={`/all?category=${cat.name}`} className={getLinkStyle(isActive)}>
+                    {cat.name}
+                    {isActive && (
+                      <motion.div 
+                        layoutId="activeTab"
+                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-900 dark:bg-zinc-50"
+                      />
+                    )}
+                  </Link>
+                );
+              })}
           </div>
         </div>
 
@@ -109,7 +126,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     className="absolute right-0 mt-3 w-52 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-2xl py-2 z-[80]"
                   >
-                    {/* 💡 테마 설정 (아이콘과 텍스트가 상태에 따라 변경) */}
                     <div className="px-2 pb-1 mb-1 border-b border-zinc-50 dark:border-zinc-800/50">
                       <button 
                         onClick={toggleTheme}

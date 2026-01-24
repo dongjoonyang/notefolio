@@ -118,7 +118,8 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    <main className="max-w-7xl mx-auto p-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+    /* 💡 Navbar와 동일하게 px-6으로 수정하고 py-10으로 상하 여백만 유지했습니다. */
+    <main className="max-w-7xl mx-auto px-6 py-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
@@ -127,7 +128,6 @@ function ProjectListContent() {
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
-        {/* 💡 검색창 사이즈만 콤팩트하게 수정 / 텍스트는 그대로 유지 */}
         <div className="relative w-full md:w-72">
           <div className="relative flex items-center">
             <Search 
@@ -159,7 +159,8 @@ function ProjectListContent() {
           <Link 
             href={`/projects/${project.id}`} 
             key={`${project.id}-${index}`} 
-            className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 hover:shadow-lg dark:hover:shadow-zinc-900/50 transition-all"
+            /* 💡 shadow-lg 제거하여 깔끔한 스타일로 변경 (그림자 영역 제거 요청 반영) */
+            className="group block border border-slate-100 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 transition-all"
           >
             <div className="relative aspect-video bg-slate-50 dark:bg-zinc-800 overflow-hidden">
               {project.thumbnail && <Image src={project.thumbnail} alt={project.title} fill sizes="33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />}
@@ -193,7 +194,7 @@ function ProjectListContent() {
         ))}
 
         {hasMore && loading && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
-          <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 shadow-sm opacity-40">
+          <div key={`sk-${i}`} className="border border-slate-50 dark:border-zinc-800 rounded-3xl overflow-hidden bg-white dark:bg-zinc-900 opacity-40">
             <Skeleton className="aspect-video w-full rounded-none dark:bg-zinc-800" />
             <div className="p-6 space-y-4">
               <Skeleton className="h-4 w-12 rounded-full dark:bg-zinc-800" />
