@@ -77,7 +77,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
     <nav className="bg-white dark:bg-zinc-950 sticky top-0 z-[60] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-12 h-full">
-          <Link href="/" className="font-black text-xl tracking-tighter z-[70] text-zinc-900 dark:text-zinc-50">ONOFF Studio</Link>
+          <Link href="/" className="font-black text-xl tracking-tighter z-[70] text-zinc-900 dark:text-zinc-50">Plug Log Studio</Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>
