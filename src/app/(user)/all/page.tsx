@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
-import { Heart, MessageCircle } from "lucide-react";
+import { Heart, MessageCircle, Search } from "lucide-react";
 
 function LoadingOverlay() {
   return (
@@ -79,7 +79,6 @@ function ProjectListContent() {
     }
   }, [page, activeSearch, categoryParam, loading]);
 
-  // 💡 [수정됨] 필터링된 프로젝트 리스트 정의
   const filteredProjects = projects.filter((project) => {
     const isVisible = Number(project.isVisible) !== 0;
     const categoryVisible = Number(project.categoryIsVisible) !== 0;
@@ -89,9 +88,7 @@ function ProjectListContent() {
     return true;
   });
 
-  // ✨ [신규 추가] 비노출 게시물 때문에 화면이 빌 경우 다음 페이지를 자동으로 호출하는 로직
   useEffect(() => {
-    // 로딩 중이 아니고, 더 가져올 데이터가 있는데, 화면에 보이는게 6개 미만이라면 즉시 다음 호출
     if (!loading && hasMore && projects.length > 0 && filteredProjects.length < 6) {
       fetchProjects(false);
     }
@@ -130,21 +127,30 @@ function ProjectListContent() {
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
-        <div className="relative w-full md:w-80">
-          <input
-            type="text"
-            placeholder="Search & Press Enter"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full px-5 py-3 pr-10 rounded-2xl border border-slate-200 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-900 text-sm text-zinc-900 dark:text-zinc-200 focus:ring-2 focus:ring-black/5 dark:focus:ring-white/5 outline-none transition-all"
-          />
-          {searchTerm && (
-            <button 
-              onClick={() => { setSearchTerm(""); setActiveSearch(""); }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500 text-xs"
-            >✕</button>
-          )}
+        {/* 💡 검색창 사이즈만 콤팩트하게 수정 / 텍스트는 그대로 유지 */}
+        <div className="relative w-full md:w-72">
+          <div className="relative flex items-center">
+            <Search 
+              size={18} 
+              className="absolute left-4 text-zinc-900 dark:text-zinc-400 stroke-[2.5px]" 
+            />
+            <input
+              type="text"
+              placeholder="검색어를 입력해주세요."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="w-full pl-11 pr-10 py-2.5 rounded-full border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-sm font-medium text-zinc-900 dark:text-zinc-200 placeholder:text-zinc-400 focus:border-zinc-300 dark:focus:border-zinc-700 outline-none transition-all"
+            />
+            {searchTerm && (
+              <button 
+                onClick={() => { setSearchTerm(""); setActiveSearch(""); }}
+                className="absolute right-4 w-4.5 h-4.5 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 rounded-full text-zinc-400 hover:text-zinc-600 transition-colors"
+              >
+                <span className="text-[10px]">✕</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

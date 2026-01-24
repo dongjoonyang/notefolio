@@ -4,17 +4,20 @@ import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ThemeToggle } from "@/components/ThemeToggle"; // ✅ 테마 토글 버튼 임포트
+import { MoreHorizontal, LayoutDashboard, Moon, Sun, Settings } from "lucide-react";
+import { useTheme } from "next-themes"; 
 
 function NavbarContent({ categories, initialIsAdmin }: { categories: any[], initialIsAdmin: boolean }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { theme, setTheme } = useTheme(); 
   const currentCategory = searchParams.get('category');
   
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(initialIsAdmin);
   const [isMounted, setIsMounted] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
     const hasAdminCookie = document.cookie
@@ -27,39 +30,38 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
 
   useEffect(() => {
     if (!isMounted) return;
-
     const checkAuth = () => {
       const hasAdminCookie = document.cookie
         .split(';')
         .some((item) => item.trim().startsWith('is_admin='));
-      
       if (isAdmin !== hasAdminCookie) {
         setIsAdmin(hasAdminCookie);
         router.refresh();
       }
     };
-
     const interval = setInterval(checkAuth, 2000);
     return () => clearInterval(interval);
   }, [isAdmin, isMounted, router]);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
   }, [pathname, searchParams]);
 
-  const handleLogout = async () => {
-    if (!confirm("정말 로그아웃 하시겠습니까?")) return;
-    
-    const res = await fetch("/api/logout", { method: "POST" });
-    if (res.ok) {
-      document.cookie = "is_admin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-      setIsAdmin(false);
-      router.refresh(); 
-      router.push("/");
-    }
-  };
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const close = () => setIsDropdownOpen(false);
+    window.addEventListener('click', close);
+    return () => window.removeEventListener('click', close);
+  }, [isDropdownOpen]);
 
   const showAdminMenu = isMounted && isAdmin;
+
+  // 💡 테마 토글 함수
+  const toggleTheme = (e: React.MouseEvent) => {
+    e.stopPropagation(); 
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const getLinkStyle = (isActive: boolean) => 
     `flex items-center h-full px-1 transition-all duration-200 ${
@@ -79,7 +81,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
-            {/* 💡 노출 설정(isVisible === 1)된 카테고리만 렌더링 */}
             {categories
               ?.filter((cat: any) => Number(cat.isVisible) !== 0)
               .map((cat: any) => (
@@ -91,14 +92,62 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden lg:flex items-center gap-5">
-            <ThemeToggle />
-            {/* {showAdminMenu && (
-              <>
-                <Link href="/admin" target="_blank" className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">ADMIN</Link>
-                <button onClick={handleLogout} className="text-[10px] font-bold text-red-500 dark:text-red-400 hover:opacity-70 transition-opacity">LOGOUT</button>
-              </>
-            )} */}
+          <div className="hidden lg:flex items-center">
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <button 
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-full transition-colors text-zinc-500 dark:text-zinc-400"
+              >
+                <MoreHorizontal size={24} />
+              </button>
+
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute right-0 mt-3 w-52 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-2xl py-2 z-[80]"
+                  >
+                    {/* 💡 테마 설정 (아이콘과 텍스트가 상태에 따라 변경) */}
+                    <div className="px-2 pb-1 mb-1 border-b border-zinc-50 dark:border-zinc-800/50">
+                      <button 
+                        onClick={toggleTheme}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 rounded-lg transition-colors text-left group"
+                      >
+                        <div className="text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                          {isMounted && (theme === "dark" ? <Sun size={19} /> : <Moon size={19} />)}
+                        </div>
+                        <span className="text-sm font-bold text-zinc-700 dark:text-zinc-200 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors">
+                          {isMounted && (theme === "dark" ? "라이트 모드" : "다크 모드")}
+                        </span>
+                      </button>
+                    </div>
+
+                    <div className="px-2">
+                      {showAdminMenu ? (
+                        <Link 
+                          href="/admin" 
+                          target="_blank"
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        >
+                          <LayoutDashboard size={19} />
+                          관리자 스튜디오
+                        </Link>
+                      ) : (
+                        <Link 
+                          href="/login" 
+                          className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                        >
+                          <Settings size={19} />
+                          관리자 로그인
+                        </Link>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <button 
@@ -121,7 +170,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           >
             <div className="flex flex-col gap-2">
               <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
-              {/* 💡 모바일 메뉴에서도 노출 설정된 것만 필터링 */}
               {categories
                 ?.filter((cat: any) => Number(cat.isVisible) !== 0)
                 .map((cat: any) => (
@@ -131,18 +179,21 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
                 ))}
             </div>
             
-            <div className="mt-auto pt-10 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                <span className="text-zinc-500 dark:text-zinc-400 font-medium">Appearance</span>
-                <ThemeToggle />
-              </div>
-              
-              {/* {showAdminMenu && (
-                <>
-                  <Link href="/admin" target="_blank" className="text-blue-600 dark:text-blue-400 font-bold text-lg">ADMIN SETTINGS</Link>
-                  <button onClick={handleLogout} className="text-red-500 dark:text-red-400 font-bold text-lg text-left">LOGOUT</button>
-                </>
-              )} */}
+            <div className="mt-auto pt-10 border-t border-zinc-100 dark:border-zinc-800 flex flex-col gap-8">
+              <button 
+                onClick={toggleTheme}
+                className="flex items-center gap-4 p-5 bg-zinc-50 dark:bg-zinc-900 rounded-2xl active:scale-95 transition-all"
+              >
+                <div className="text-zinc-600 dark:text-zinc-300">
+                  {isMounted && (theme === "dark" ? <Sun size={24} /> : <Moon size={24} />)}
+                </div>
+                <span className="text-zinc-700 dark:text-zinc-200 font-bold text-lg">
+                  {isMounted && (theme === "dark" ? "라이트 모드" : "다크 모드")}
+                </span>
+              </button>
+              {showAdminMenu && (
+                <Link href="/admin" target="_blank" className="py-5 bg-blue-600 text-white rounded-2xl text-center font-black text-lg uppercase tracking-wider">ADMIN STUDIO</Link>
+              )}
             </div>
           </motion.div>
         )}
