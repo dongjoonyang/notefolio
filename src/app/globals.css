@@ -8,6 +8,8 @@ html, body {
   scroll-behavior: smooth;
   /* 기본 배경색과 글자색은 layout.tsx의 body 클래스에서 관리하지만, 
      CSS 차원에서도 zinc 톤으로 기본값을 잡아줍니다. */
+/* 팝업이 열려도 스크롤바 자리를 예약해서 화면 밀림을 방지합니다 */
+  scrollbar-gutter: stable;
 }
 
 body {

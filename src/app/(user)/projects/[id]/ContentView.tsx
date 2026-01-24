@@ -4,16 +4,16 @@ import { useState, useEffect } from 'react';
 import ImageModal from '@/components/ImageModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from '@/components/Skeleton';
-import ProjectActions from '@/components/ProjectActions'; // 1. 임포트 추가
+import ProjectActions from '@/components/ProjectActions';
 
 export default function ContentView({ 
   html, 
   loadingOverlay,
-  projectId // 2. projectId 추가
+  projectId
 }: { 
   html: string; 
   loadingOverlay?: React.ReactNode;
-  projectId: number; // 타입 추가
+  projectId: number;
 }) {
   const [selectedImg, setSelectedImg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,8 +49,10 @@ export default function ContentView({
               dangerouslySetInnerHTML={{ __html: html }}
             />
             
-            {/* 3. 콘텐츠가 끝나는 지점에 좋아요/공유 버튼 배치 */}
-            <ProjectActions projectId={projectId} />
+            {/* 💡 기존 로직 유지, ModalFrame에서 접근할 수 있도록 클래스만 추가 */}
+            <div className="inner-like-btn">
+              <ProjectActions projectId={projectId} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

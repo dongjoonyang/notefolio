@@ -19,14 +19,11 @@ function stripHtml(html: string) {
     .trim();
 }
 
-// ... (위쪽 import 및 stripHtml 함수 생략)
-
 export default async function ProjectModalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cookieStore = await cookies();
   const isAdmin = !!cookieStore.get("admin_session");
 
-  // 1. 현재 프로젝트 상세 정보
   const [rows]: any = await pool.query(`
     SELECT p.*, c.name as categoryName 
     FROM Project p 
@@ -37,7 +34,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
   const project = rows[0];
   if (!project) notFound();
 
-  // 2. 추천 게시물 (More Projects)
   const [recommendations]: any = await pool.query(`
     SELECT p.id, p.title, p.thumbnail, p.description,
     (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
@@ -45,7 +41,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
     ORDER BY likeCount DESC, p.id DESC LIMIT 3
   `, [id]);
 
-  // 3. ✨ 이전 글 / 다음 글 쿼리
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
     [project.sortOrder]
@@ -60,8 +55,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
 
   return (
     <ModalFrame>
-      {/* 💡 핵심 수정: h-[100dvh], sm:h-[90vh], overflow-y-auto를 제거하여 
-          팝업이 내용에 따라 아래로 길어지게 만듭니다. */}
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-3xl scrollbar-hide shadow-2xl overflow-hidden">
         <header className="pt-16 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
           <div className="max-w-3xl mx-auto px-6">
@@ -82,7 +75,7 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
           
           <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-800 pt-12">
             {newerPost ? (
-              <Link href={`/projects/${newerPost.id}`} className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
+              <Link href={`/projects/${newerPost.id}`} replace className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">PREVIOUS</span>
                 <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
               </Link>
@@ -92,7 +85,7 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
               </div>
             )}
             {olderPost ? (
-              <Link href={`/projects/${olderPost.id}`} className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-right">
+              <Link href={`/projects/${olderPost.id}`} replace className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-right">
                 <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">NEXT</span>
                 <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
               </Link>
@@ -108,7 +101,7 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
               <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-10 text-center">More Projects</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
                 {recommendations.map((rec: any) => (
-                  <Link key={rec.id} href={`/projects/${rec.id}`} className="group">
+                  <Link key={rec.id} href={`/projects/${rec.id}`} replace className="group">
                     <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800">
                       <Image src={rec.thumbnail || "/placeholder.jpg"} alt={rec.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
                     </div>
