@@ -46,13 +46,16 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
 
   return (
     <ModalFrame>
-      <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-3xl scrollbar-hide shadow-2xl overflow-hidden">
-        <header className="pt-16 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
-          <div className="max-w-3xl mx-auto px-6">
-            <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-block mb-4">
+      {/* 💡 팝업 라운드를 sm:rounded-xl로 축소 (기존 3xl) */}
+      <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl scrollbar-hide shadow-2xl overflow-hidden">
+        
+        {/* 💡 헤더 영역 max-w-5xl로 확장하여 더 넓게 보이도록 수정 */}
+        <header className="pt-20 pb-16 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
+          <div className="max-w-5xl mx-auto px-8 md:px-10">
+            <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-block mb-6">
               {project.categoryName || "Uncategorized"}
             </span>
-            <h1 className="text-3xl md:text-5xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-6 tracking-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-zinc-50 leading-[1.1] mb-8 tracking-tight">
               {project.title}
             </h1>
             <div className="text-gray-400 text-xs font-medium">
@@ -61,40 +64,44 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
           </div>
         </header>
 
-        <div className="max-w-3xl mx-auto px-6 py-12">
+        {/* 💡 본문 영역 max-w-5xl 및 px-8~10으로 확장 */}
+        <div className="max-w-5xl mx-auto px-8 md:px-10 py-16">
           <ContentView html={project.description} projectId={project.id} />
           
-          <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-800 pt-12">
+          {/* 내비게이션 영역 */}
+          <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-100 dark:border-zinc-800 pt-16">
             {newerPost ? (
-              <Link href={`/projects/${newerPost.id}`} replace className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">PREVIOUS</span>
-                <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
+              <Link href={`/projects/${newerPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">PREVIOUS</span>
+                <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
               </Link>
             ) : (
-              <div className="p-6 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center justify-center opacity-40">
+              <div className="p-8 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-xl flex items-center justify-center opacity-40">
                 <span className="text-xs text-zinc-400 font-medium tracking-widest uppercase">Latest Post</span>
               </div>
             )}
             {olderPost ? (
-              <Link href={`/projects/${olderPost.id}`} replace className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-right">
-                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-2">NEXT</span>
-                <span className="text-base font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
+              <Link href={`/projects/${olderPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-right">
+                <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">NEXT</span>
+                <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
               </Link>
             ) : (
-              <div className="p-6 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-2xl flex items-center justify-center opacity-40">
+              <div className="p-8 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-xl flex items-center justify-center opacity-40">
                 <span className="text-xs text-zinc-400 font-medium tracking-widest uppercase">Oldest Post</span>
               </div>
             )}
           </div>
 
+          {/* 추천 섹션 */}
           {recommendations.length > 0 && (
-            <section className="mt-32 pt-16 border-t border-zinc-100 dark:border-zinc-800 overflow-visible">
-              <h3 className="text-[18px] font-black text-zinc-800 uppercase mb-10 text-left">이런 프로젝트는 어때요?</h3>
+            <section className="mt-32 pt-20 border-t border-zinc-100 dark:border-zinc-800 overflow-visible">
+              <h3 className="text-[20px] font-black text-zinc-800 dark:text-zinc-100 uppercase mb-12 text-left">이런 프로젝트는 어때요?</h3>
               <ProjectCarousel recommendations={recommendations} />
             </section>
           )}
 
-          <div className="mt-20 pb-20">
+          {/* 댓글 섹션 */}
+          <div className="mt-24 pb-24">
             <CommentSection projectId={id} isAdmin={isAdmin} />
           </div>
         </div>
