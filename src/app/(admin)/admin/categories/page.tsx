@@ -18,6 +18,8 @@ function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
 
   const rawValue = category.isVisible !== undefined ? category.isVisible : category.is_visible;
   const isOn = rawValue === undefined ? true : Number(rawValue) !== 0;
+  // 💡 프로젝트 개수 데이터 (기본값 0)
+  const count = category.projectCount || 0;
 
   return (
     <div
@@ -36,9 +38,17 @@ function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
           <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${!isOn ? "bg-zinc-100 text-zinc-400" : "bg-blue-50 text-blue-500"}`}>
             <Tag size={14} />
           </div>
-          <span className={`font-bold text-sm sm:text-base truncate transition-all ${!isOn ? "text-zinc-300" : "text-zinc-800"}`}>
-            {category.name}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className={`font-bold text-sm sm:text-base truncate transition-all ${!isOn ? "text-zinc-300" : "text-zinc-800"}`}>
+              {category.name}
+            </span>
+            {/* 💡 프로젝트 개수 배지 표시 */}
+            <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[10px] font-black tracking-tighter ${
+              isOn ? "bg-zinc-100 text-zinc-500" : "bg-zinc-50 text-zinc-300"
+            }`}>
+              {count}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -61,7 +71,8 @@ function SortableRow({ category, onEdit, onDelete, onToggle }: any) {
           <button onClick={() => onEdit(category.id, category.name)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
             <Edit2 size={16} />
           </button>
-          <button onClick={() => onDelete(category.id)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+          {/* 💡 삭제 시 개수 정보를 함께 넘겨 안전하게 처리하도록 변경 */}
+          <button onClick={() => onDelete(category.id, count)} className="p-1.5 sm:p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
             <Trash2 size={16} />
           </button>
         </div>
@@ -113,7 +124,6 @@ export default function CategoriesPage() {
     const trimmedName = newCategory.trim();
     if (!trimmedName) return;
 
-    // 💡 중복 체크 (기존 카테고리 배열에서 이름 비교)
     const isDuplicate = categories.some(
       (cat) => cat.name.toLowerCase() === trimmedName.toLowerCase()
     );
@@ -130,7 +140,13 @@ export default function CategoriesPage() {
     if (res.ok) { setNewCategory(""); fetchCategories(); }
   };
 
-  const deleteCategory = async (id: number) => {
+  const deleteCategory = async (id: number, count: number) => {
+    // 💡 연결된 프로젝트가 있으면 삭제 방지 (안전 장치)
+    if (count > 0) {
+      alert(`이 카테고리에는 ${count}개의 프로젝트가 연결되어 있어 삭제할 수 없습니다. 먼저 프로젝트의 카테고리를 변경해주세요.`);
+      return;
+    }
+
     if (!confirm("정말 삭제하시겠습니까?")) return;
     const res = await fetch(`/api/categories/${id}`, { method: "DELETE" });
     if (res.ok) fetchCategories();
@@ -142,7 +158,6 @@ export default function CategoriesPage() {
     const trimmedNewName = newName.trim();
     if (trimmedNewName === currentName) return;
 
-    // 💡 수정 시 중복 체크
     const isDuplicate = categories.some(
       (cat) => cat.id !== id && cat.name.toLowerCase() === trimmedNewName.toLowerCase()
     );
