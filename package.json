@@ -23,7 +23,8 @@
     "quill-image-resize-module-react": "^3.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "react-quill-new": "^3.7.0"
+    "react-quill-new": "^3.7.0",
+    "sonner": "^2.0.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -2,6 +2,7 @@
 
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { toast } from 'sonner';
 
 export default function ModalFrame({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -9,11 +10,12 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isLiked, setIsLiked] = useState(false);
   
-  // 💡 중복 업데이트 방지를 위한 잠금 장치
+  // 💡 잠금 장치 및 마지막 상태 저장
   const isInternalClick = useRef(false);
+  const lastKnownState = useRef(false);
 
   const syncLikeState = useCallback(() => {
-    // 내가 직접 클릭 중일 때는 Observer가 상태를 건드리지 못하게 방어
+    // 💡 사용자가 직접 누르는 중일 때는 감시자가 상태를 바꾸지 못하게 강력 차단
     if (isInternalClick.current) return;
 
     const innerLikeButton = document.querySelector('.inner-like-btn button:first-of-type');
@@ -22,7 +24,13 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
       const hasFill = htmlContent.includes('fill="currentColor"') && !htmlContent.includes('fill="none"');
       const hasRedClass = innerLikeButton.classList.contains('text-red-500') || innerLikeButton.classList.contains('bg-red-500');
       
-      setIsLiked(!!(hasFill || hasRedClass));
+      const newState = !!(hasFill || hasRedClass);
+      
+      // 💡 값이 실제로 변했을 때만 상태를 업데이트하여 불필요한 리렌더링(깜빡임) 방지
+      if (newState !== lastKnownState.current) {
+        lastKnownState.current = newState;
+        setIsLiked(newState);
+      }
     }
   }, []);
 
@@ -59,21 +67,22 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
     const innerLikeButton = document.querySelector('.inner-like-btn button:first-of-type') as HTMLElement;
     
     if (innerLikeButton) {
-      // ✨ 1. 잠금 시작: Observer가 syncLikeState를 실행하지 못하게 함
+      // ✨ 1. 잠금 활성화 (1초 동안 Observer 무시)
       isInternalClick.current = true;
       
-      // ✨ 2. 즉시 UI 반영 (Optimistic Update)
-      setIsLiked(prev => !prev); 
+      // ✨ 2. 즉시 UI 반영 및 참조값 업데이트
+      const nextState = !isLiked;
+      setIsLiked(nextState); 
+      lastKnownState.current = nextState;
       
       // ✨ 3. 실제 버튼 클릭
       innerLikeButton.click();
 
-      // ✨ 4. 잠시 후 잠금 해제 (상태가 안정화된 후)
+      // ✨ 4. 충분한 시간 뒤에 잠금 해제 (깜빡임 방지 핵심)
       setTimeout(() => {
         isInternalClick.current = false;
-        // 최종적으로 내부 상태와 일치하는지 한 번 더 확인 (검증)
-        syncLikeState();
-      }, 500);
+        syncLikeState(); // 마지막으로 상태 최종 동기화
+      }, 1000); 
     }
   };
 
@@ -82,6 +91,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
     const innerShareButton = document.querySelector('.inner-like-btn button:last-of-type') as HTMLElement;
     if (innerShareButton) {
       innerShareButton.click();
+      toast.success('링크가 클립보드에 복사되었습니다.');
     }
   };
 
@@ -137,7 +147,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
           onClick={handleShareClick}
           className="group p-4 bg-white/10 hover:bg-white/20 rounded-full transition-all backdrop-blur-md border border-white/10 shadow-lg"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/60 hover:text-blue-400">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/60 group-hover:text-blue-400 transition-colors">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>
           </svg>
         </button>

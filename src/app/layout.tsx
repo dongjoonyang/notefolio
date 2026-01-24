@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
+import { Toaster } from 'sonner';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="min-h-screen">
             {children}
           </div>
+          {/* 💡 ThemeProvider 안쪽으로 옮기면 테마 연동이 더 확실합니다 */}
+          <Toaster 
+            position="bottom-center" 
+            richColors 
+            closeButton 
+            duration={1500} // 💡 1.5초 후 자동으로 닫힘
+          />
         </ThemeProvider>
       </body>
     </html>
