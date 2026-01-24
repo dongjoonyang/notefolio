@@ -19,6 +19,8 @@ function stripHtml(html: string) {
     .trim();
 }
 
+// ... (위쪽 import 및 stripHtml 함수 생략)
+
 export default async function ProjectModalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cookieStore = await cookies();
@@ -43,7 +45,7 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
     ORDER BY likeCount DESC, p.id DESC LIMIT 3
   `, [id]);
 
-  // 3. ✨ 이전 글 / 다음 글 쿼리 추가
+  // 3. ✨ 이전 글 / 다음 글 쿼리
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
     [project.sortOrder]
@@ -58,7 +60,9 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
 
   return (
     <ModalFrame>
-      <article className="w-full bg-white dark:bg-zinc-950 overflow-y-auto h-[100dvh] sm:h-[90vh] sm:rounded-t-3xl scrollbar-hide shadow-2xl">
+      {/* 💡 핵심 수정: h-[100dvh], sm:h-[90vh], overflow-y-auto를 제거하여 
+          팝업이 내용에 따라 아래로 길어지게 만듭니다. */}
+      <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-3xl scrollbar-hide shadow-2xl overflow-hidden">
         <header className="pt-16 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
           <div className="max-w-3xl mx-auto px-6">
             <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-block mb-4">
@@ -76,7 +80,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
         <div className="max-w-3xl mx-auto px-6 py-12">
           <ContentView html={project.description} projectId={project.id} />
           
-          {/* ✨ 이전 글 / 다음 글 네비게이션 UI 복구 */}
           <div className="mt-20 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-zinc-100 dark:border-zinc-800 pt-12">
             {newerPost ? (
               <Link href={`/projects/${newerPost.id}`} className="group p-6 border border-zinc-100 dark:border-zinc-800 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
