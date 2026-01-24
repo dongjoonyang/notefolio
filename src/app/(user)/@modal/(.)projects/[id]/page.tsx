@@ -2,28 +2,17 @@ import { pool } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import Link from "next/link";
-import Image from "next/image";
 import CommentSection from "../../../projects/[id]/CommentSection";
 import ContentView from "../../../projects/[id]/ContentView";
 import ModalFrame from "@/components/ModalFrame";
-
-function stripHtml(html: string) {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]*>?/gm, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .trim();
-}
+import ProjectCarousel from "@/components/ProjectCarousel";
 
 export default async function ProjectModalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const cookieStore = await cookies();
   const isAdmin = !!cookieStore.get("admin_session");
 
+  // 1. 프로젝트 상세 정보 조회
   const [rows]: any = await pool.query(`
     SELECT p.*, c.name as categoryName 
     FROM Project p 
@@ -34,13 +23,15 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
   const project = rows[0];
   if (!project) notFound();
 
+  // 2. 추천 프로젝트 조회 (LIMIT 10 유지)
   const [recommendations]: any = await pool.query(`
     SELECT p.id, p.title, p.thumbnail, p.description,
     (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
     FROM Project p WHERE p.isVisible = 1 AND p.id != ?
-    ORDER BY likeCount DESC, p.id DESC LIMIT 3
+    ORDER BY likeCount DESC, p.id DESC LIMIT 10
   `, [id]);
 
+  // 3. 이전글/다음글 조회
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
     [project.sortOrder]
@@ -97,18 +88,9 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
           </div>
 
           {recommendations.length > 0 && (
-            <section className="mt-32 pt-16 border-t border-zinc-100 dark:border-zinc-800">
-              <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-10 text-center">More Projects</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
-                {recommendations.map((rec: any) => (
-                  <Link key={rec.id} href={`/projects/${rec.id}`} replace className="group">
-                    <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-zinc-100 dark:border-zinc-800">
-                      <Image src={rec.thumbnail || "/placeholder.jpg"} alt={rec.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
-                    </div>
-                    <h4 className="text-sm font-bold mt-4 line-clamp-1 group-hover:text-blue-600 transition-colors">{rec.title}</h4>
-                  </Link>
-                ))}
-              </div>
+            <section className="mt-32 pt-16 border-t border-zinc-100 dark:border-zinc-800 overflow-visible">
+              <h3 className="text-[18px] font-black text-zinc-800 uppercase mb-10 text-left">이런 프로젝트는 어때요?</h3>
+              <ProjectCarousel recommendations={recommendations} />
             </section>
           )}
 
