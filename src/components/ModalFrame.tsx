@@ -16,12 +16,15 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
 
   const syncStates = useCallback(() => {
     if (!isInternalClick.current) {
-      const innerLikeButton = document.querySelector('.inner-like-btn button:first-of-type');
+      // 💡 수정됨: 하위 버튼의 SVG fill 상태뿐만 아니라 클래스 명까지 더 정밀하게 체크
+      const innerLikeButton = document.querySelector('.inner-like-btn button');
       if (innerLikeButton) {
         const htmlContent = innerLikeButton.innerHTML;
-        const hasFill = htmlContent.includes('fill="currentColor"') && !htmlContent.includes('fill="none"');
-        const hasRedClass = innerLikeButton.classList.contains('text-red-500') || innerLikeButton.classList.contains('bg-red-500');
-        const newState = !!(hasFill || hasRedClass);
+        // SVG fill이 none이 아니거나, 색상 클래스가 포함되어 있는지 확인
+        const hasFill = htmlContent.includes('fill="currentColor"') || (htmlContent.includes('fill') && !htmlContent.includes('fill="none"'));
+        const hasActiveColor = innerLikeButton.classList.contains('text-red-500') || innerLikeButton.innerHTML.includes('text-red-500');
+        
+        const newState = !!(hasFill || hasActiveColor);
         if (newState !== lastKnownState.current) {
           lastKnownState.current = newState;
           setIsLiked(newState);
@@ -59,11 +62,12 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
 
     let observer: MutationObserver | null = null;
     const checkExist = setInterval(() => {
-      const targetNode = document.querySelector('header h1') || document.querySelector('.inner-like-btn');
-      if (targetNode) {
+      // 💡 수정됨: 관찰 대상을 .inner-like-btn으로 구체화하여 변화 감지 극대화
+      const targetNode = document.querySelector('.inner-like-btn') || document.body;
+      if (document.querySelector('.inner-like-btn')) {
         syncStates();
         observer = new MutationObserver(syncStates);
-        observer.observe(document.body, { attributes: true, childList: true, subtree: true });
+        observer.observe(targetNode, { attributes: true, childList: true, subtree: true });
         clearInterval(checkExist);
       }
     }, 100);
@@ -82,17 +86,20 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
 
   const handleLikeToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const innerLikeButton = document.querySelector('.inner-like-btn button:first-of-type') as HTMLElement;
+    // 💡 수정됨: 첫 번째 버튼을 명확히 타겟팅
+    const innerLikeButton = document.querySelector('.inner-like-btn button') as HTMLElement;
     if (innerLikeButton) {
       isInternalClick.current = true;
       const nextState = !isLiked;
       setIsLiked(nextState); 
       lastKnownState.current = nextState;
       innerLikeButton.click();
+      
+      // 클릭 후 상태가 완전히 반영될 수 있도록 짧은 지연 후 락 해제
       setTimeout(() => {
         isInternalClick.current = false;
         syncStates();
-      }, 1000); 
+      }, 500); 
     }
   };
 
@@ -114,7 +121,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="fixed inset-0 z-[100] bg-white dark:bg-zinc-950 lg:bg-transparent transition-none">
-      {/* 💡 모바일 닫기: 유지 */}
+      {/* 모바일 닫기 유지 */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-[170] h-14 flex items-center px-4 transition-all duration-300 ${
         isScrolled ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm' : 'bg-transparent'
       }`}>
@@ -144,7 +151,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
         </div>
       </div>
 
-      {/* 💡 수정됨: PC 닫기 버튼 숨김 (hidden lg:block -> hidden 으로 아예 제거) */}
+      {/* PC 닫기 버튼 숨김 유지 */}
       <div className="hidden">
         <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
