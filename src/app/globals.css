@@ -6,22 +6,20 @@
 html, body {
   box-sizing: border-box;
   scroll-behavior: smooth;
-  /* 기본 배경색과 글자색은 layout.tsx의 body 클래스에서 관리하지만, 
-     CSS 차원에서도 zinc 톤으로 기본값을 잡아줍니다. */
-/* 팝업이 열려도 스크롤바 자리를 예약해서 화면 밀림을 방지합니다 */
   scrollbar-gutter: stable;
 }
-/* 💡 모달이 열렸을 때만 스크롤바 예약 공간을 삭제 */
+
+/* 💡 모달이 열렸을 때 설정 */
 body.modal-open {
   overflow: hidden !important;
-  scrollbar-gutter: auto !important; /* 예약 공간 해제 */
+  scrollbar-gutter: auto !important;
 }
 
-/* 뒷배경 스크롤바가 끈질기게 남을 경우를 대비한 완전 박멸 */
 body.modal-open::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
 }
+
 body {
   @apply bg-white text-zinc-900 transition-colors duration-300;
 }
@@ -33,12 +31,11 @@ body {
 /* --- 1. 공통 컨텐츠 스타일 (prose-custom) --- */
 .prose-custom {
   line-height: 1.8;
-  color: inherit; /* 부모의 zinc 컬러를 따라감 */
+  color: inherit;
 }
 
 .prose-custom h2, .prose-custom h3 { scroll-margin-top: 100px; }
 
-/* 제목 스타일 - Light/Dark 대응 */
 .prose-custom h1 { 
   font-size: 2.5rem; font-weight: 900; margin-top: 3rem; margin-bottom: 1.5rem; 
   @apply text-zinc-950 dark:text-zinc-50; 
@@ -58,112 +55,68 @@ body {
 .prose-custom p { margin-bottom: 1.5rem; }
 .prose-custom ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
 
-/* --- 2. 에디터 및 유저 페이지 공통 이미지 설정 (Float/Align) --- */
-.ql-editor img, 
-.content-view img {
+/* 1. 기본 컨테이너 설정 (여백 0) */
+.prose-custom {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* 2. 일반 텍스트, 리스트, 버튼 영역 (여백 2rem) */
+.prose-custom > *:not(p:has(img)):not(img),
+.inner-like-btn {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+/* 3. 이미지를 포함한 p 태그 */
+.prose-custom p:has(img) {
+  width: 100%;
+  padding: 0 !important;
+  display: block;
+  text-align: inherit; 
+  /* 💡 이미지 사이 유령 공백 제거 */
+  font-size: 0; 
+  line-height: 0;
+}
+
+/* 4. 작은 이미지가 있는 줄 여백 부활 */
+.prose-custom p:has(img[width]:not([width="100%"])),
+.prose-custom p:has(img[style*="width"]):not(:has(img[style*="width: 100%"])):not(:has(img[style*="width:100%"])) {
+  padding-left: 2rem !important; /* 글자 여백과 일치시킴 */
+  padding-right: 2rem !important;
+}
+
+/* 5. [핵심 수정] 이미지 자체 설정 - 왼쪽 여백 제거 */
+.prose-custom img {
   display: inline-block !important;
+  vertical-align: top; /* 하단 틈새 방지 */
   max-width: 100%;
   height: auto;
-  vertical-align: bottom;
-  border-radius: 1rem;
-  cursor: zoom-in;
-  transition: transform 0.2s ease;
+  /* 💡 왼쪽은 0으로 붙이고, 이미지 사이(오른쪽)와 위아래만 마진 부여 */
+  margin: 0.4rem 0.4rem 0.4rem 0; 
 }
 
-.content-view img:hover {
-  transform: scale(1.01);
-}
-
-/* 왼쪽 정렬 */
-.ql-editor img[style*="float: left"],
-.content-view img[style*="float: left"] {
-  float: left !important;
-  margin-right: 20px !important;
-  margin-bottom: 10px !important;
-}
-
-/* 오른쪽 정렬 */
-.ql-editor img[style*="float: right"],
-.content-view img[style*="float: right"] {
-  float: right !important;
-  margin-left: 20px !important;
-  margin-bottom: 10px !important;
-}
-
-/* 중앙 정렬 */
-.ql-editor img[style*="display: block; margin: auto;"],
-.content-view img[style*="display: block; margin: auto;"] {
+/* 6. 전체 너비 이미지 (벽 뚫기) */
+.prose-custom img[style*="width: 100%"],
+.prose-custom img[style*="width:100%"],
+.prose-custom img[width="100%"] {
   display: block !important;
-  float: none !important;
-  margin: 2rem auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 1.5rem 0 !important; /* 풀 이미지는 좌우 마진 0 */
 }
 
-/* --- 3. 부모 컨테이너 레이아웃 수정 (Float 해제 및 여백) --- */
-.content-view {
-  display: block !important;
-  width: 100%;
+/* 7. 데스크탑 대응 */
+@media (min-width: 768px) {
+  .prose-custom > *:not(p:has(img)):not(img),
+  .inner-like-btn {
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+  }
+  /* 작은 이미지 줄도 데스크탑 여백으로 확장 */
+  .prose-custom p:has(img[width]:not([width="100%"])),
+  .prose-custom p:has(img[style*="width"]):not(:has(img[style*="width: 100%"])) {
+    padding-left: 2.5rem !important;
+    padding-right: 2.5rem !important;
+  }
 }
-
-.ql-editor p,
-.content-view p {
-  display: block; 
-  overflow: visible;
-  white-space: pre-wrap; /* 줄바꿈 및 공백 유지 */
-}
-
-/* 이미지가 포함된 문단 레이아웃 보호 */
-.ql-editor p:has(img),
-.content-view p:has(img) {
-  display: flow-root !important;
-}
-
-/* Float 클리어 (하단 요소 겹침 방지) */
-.ql-editor::after,
-.content-view::after {
-  content: "";
-  display: block;
-  clear: both;
-}
-
-/* --- 4. Quill 에디터 다크모드 UI (Zinc 전용) --- */
-/* 다크모드 시 에디터 툴바와 배경색을 zinc 계열로 리셋 */
-.dark .quill-dark-wrapper .ql-toolbar {
-  background-color: #18181b; /* zinc-950 */
-  border-color: #27272a;     /* zinc-800 */
-}
-
-.dark .quill-dark-wrapper .ql-container {
-  background-color: #09090b; /* zinc-950보다 더 어두운 톤 */
-  border-color: #27272a;
-}
-
-/* 다크모드 아이콘/텍스트 색상 */
-.dark .ql-snow .ql-stroke { stroke: #e4e4e7; } /* zinc-300 */
-.dark .ql-snow .ql-fill { fill: #e4e4e7; }
-.dark .ql-snow .ql-picker { color: #e4e4e7; }
-
-/* 에디터 내부 본문 글자색 */
-.dark .ql-editor {
-  color: #f4f4f5; /* zinc-100 */
-}
-
-.dark .ql-editor.ql-blank::before {
-  color: #71717a; /* zinc-500 */
-}
-
-/* 드롭다운 옵션 배경 */
-.dark .ql-snow .ql-picker-options {
-  background-color: #18181b;
-  border-color: #27272a;
-}
-
-/* --- [B] 임시 무효화 섹션 (나중에 이 블록만 삭제하세요) --- */
-/* 다크모드여도 에디터 아이콘과 배경이 변하지 않도록 강제로 라이트 값을 주입합니다. */
-.dark .ql-snow .ql-stroke { stroke: #444 !important; }
-.dark .ql-snow .ql-fill { fill: #444 !important; }
-.dark .ql-snow .ql-picker { color: #444 !important; }
-.dark .ql-editor { color: #111 !important; }
-.dark .ql-toolbar { background-color: #fff !important; }
-.dark .ql-container { background-color: #fff !important; }
-
-

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff, LayoutGrid, LayoutList, ChevronRight, FileEdit } from "lucide-react"; // 💡 FileEdit 아이콘 추가
+import { ArrowLeft, Save, Image as ImageIcon, X, Loader2, Eye, EyeOff, LayoutGrid, LayoutList, ChevronRight, FileEdit } from "lucide-react"; 
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -113,18 +113,15 @@ export default function NewProjectPage() {
     } catch (error) { alert("업로드 중 오류 발생"); } finally { setIsUploading(false); }
   };
 
-  // 💡 제출 로직 수정: 비공개 저장 확인 로직 추가
   const handleSubmit = async (targetStatus: 'DRAFT' | 'PUBLISHED') => {
     if (targetStatus === 'PUBLISHED') {
       if (!title || !content || !category) { 
         alert("게시를 위해 제목, 본문, 카테고리를 모두 입력해주세요."); 
         return; 
       }
-
-      // 💡 [추가] 게시하기를 눌렀는데 '웹사이트 공개'가 꺼져 있는 경우 확인창
       if (!isVisible) {
         const confirmSave = confirm("현재 '웹사이트 공개'가 비활성화(Private)되어 있습니다. 이대로 비공개 저장하시겠습니까?");
-        if (!confirmSave) return; // '취소' 클릭 시 중단
+        if (!confirmSave) return;
       }
     } else {
       if (!title) { 
@@ -143,7 +140,6 @@ export default function NewProjectPage() {
           content, 
           categoryName: category, 
           thumbnail, 
-          // 💡 DRAFT일 때는 토글 상태와 상관없이 비공개(false) 처리
           isVisible: targetStatus === 'PUBLISHED' ? isVisible : false, 
           showInAll: targetStatus === 'PUBLISHED' ? showInAll : false,
           status: targetStatus 

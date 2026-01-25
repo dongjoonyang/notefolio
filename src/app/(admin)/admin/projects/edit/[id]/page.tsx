@@ -132,15 +132,12 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
     } catch (error) { alert("이미지 업로드 오류"); } finally { setIsUploading(false); }
   };
 
-  // 💡 [수정] handleUpdate: 비공개 확인 로직 추가
   const handleUpdate = async (targetStatus: 'DRAFT' | 'PUBLISHED') => {
     if (targetStatus === 'PUBLISHED') {
       if (!title.trim() || !category) { 
         alert("제목과 카테고리를 확인해주세요."); 
         return; 
       }
-      
-      // 💡 [추가] '웹사이트 공개'가 꺼져 있을 때 경고창
       if (!isVisible) {
         const confirmSave = confirm("현재 '웹사이트 공개'가 비활성화(Private)되어 있습니다. 이대로 비공개 저장하시겠습니까?");
         if (!confirmSave) return;
@@ -159,8 +156,6 @@ export default function EditProjectPage({ params }: { params: Promise<{ id: stri
       formData.append("description", content);
       formData.append("categoryId", category); 
       formData.append("thumbnail", thumbnail);
-      
-      // DRAFT일 때는 토글 상태와 상관없이 비공개(0) 처리
       formData.append("isVisible", targetStatus === 'PUBLISHED' ? (isVisible ? "1" : "0") : "0");
       formData.append("showInAll", targetStatus === 'PUBLISHED' ? (showInAll ? "1" : "0") : "0");
       formData.append("status", targetStatus);
