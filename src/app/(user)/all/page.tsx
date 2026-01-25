@@ -118,12 +118,13 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    <main className="max-w-7xl mx-auto px-6 pt-20 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+    <main className="w-full px-[4%] md:px-[5%] pt-20 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
-        <h1 className="text-3xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
+        {/* 💡 All Works 텍스트 크기 축소 (text-3xl -> text-2xl) */}
+        <h1 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
 
@@ -145,20 +146,21 @@ function ProjectListContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-14">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-12">
         {filteredProjects.map((project, index) => (
           <Link 
             href={`/projects/${project.id}`} 
             key={`${project.id}-${index}`} 
             className="group block"
           >
-            <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 rounded-2xl overflow-hidden mb-5">
+            {/* 💡 이미지 라운드값 축소 (rounded-2xl -> rounded-lg) */}
+            <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 rounded-lg overflow-hidden mb-5">
               {project.thumbnail && (
                 <Image 
                   src={project.thumbnail} 
                   alt={project.title} 
                   fill 
-                  sizes="(max-width: 768px) 100vw, 33vw" 
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw" 
                   className="object-cover transition-transform duration-700 group-hover:scale-110" 
                 />
               )}
@@ -175,19 +177,20 @@ function ProjectListContent() {
 
             <div className="flex items-center justify-between px-1">
               <div className="flex-1 pr-6">
-                <h2 className="text-base font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
+                {/* 💡 리스트 제목 크기 축소 (text-base -> text-sm) */}
+                <h2 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
                   {project.title}
                 </h2>
               </div>
               
-              <div className="flex items-center gap-4 text-zinc-400 dark:text-zinc-500">
+              {/* 💡 아이콘 및 카운트 색상 진하게 변경 (text-zinc-400 -> text-zinc-600) */}
+              <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
                 <div className="flex items-center gap-1.5">
-                  {/* 💡 하트 아이콘의 색상 로직을 제거하여 무조건 동일한 선상 색상으로 유지 */}
-                  <Heart size={14} />
+                  <Heart size={14} className="fill-current" />
                   <span className="text-xs font-bold">{project.likeCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <MessageCircle size={14} />
+                  <MessageCircle size={14} className="fill-current" />
                   <span className="text-xs font-bold">{project.commentCount || 0}</span>
                 </div>
               </div>
@@ -195,12 +198,12 @@ function ProjectListContent() {
           </Link>
         ))}
 
-        {hasMore && loading && [...Array(projects.length === 0 ? 6 : 3)].map((_, i) => (
+        {hasMore && loading && [...Array(8)].map((_, i) => (
           <div key={`sk-${i}`} className="space-y-5">
-            <Skeleton className="aspect-[4/3] w-full rounded-2xl dark:bg-zinc-900" />
+            <Skeleton className="aspect-[4/3] w-full rounded-lg dark:bg-zinc-900" />
             <div className="flex justify-between items-center px-1">
-              <Skeleton className="h-5 w-1/2 rounded dark:bg-zinc-900" />
-              <Skeleton className="h-5 w-1/4 rounded dark:bg-zinc-900" />
+              <Skeleton className="h-4 w-1/2 rounded dark:bg-zinc-900" />
+              <Skeleton className="h-4 w-1/4 rounded dark:bg-zinc-900" />
             </div>
           </div>
         ))}

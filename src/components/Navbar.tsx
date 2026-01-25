@@ -63,7 +63,6 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  // 💡 border-b-2 제거됨 (motion으로 대체)
   const getLinkStyle = (isActive: boolean) => 
     `relative flex items-center h-full px-1 transition-all duration-200 ${
       isActive 
@@ -76,9 +75,9 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
 
   return (
     <nav className="bg-white dark:bg-zinc-950 sticky top-0 z-[60] transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      {/* 💡 max-w-7xl을 제거하고 리스트와 동일한 px-[4%] md:px-[5%]를 적용했습니다. */}
+      <div className="w-full px-[4%] md:px-[5%] h-16 flex items-center justify-between">
         <div className="flex items-center gap-12 h-full">
-          {/* 💡 이 부분만 logo.svg로 교체되었습니다. */}
           <Link href="/" className="z-[70] flex items-center">
             <Image 
               src="/logo.svg" 
@@ -187,7 +186,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           </button>
         </div>
       </div>
-
+      {/* ...이하 생략 (모바일 메뉴 로직 유지) */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
