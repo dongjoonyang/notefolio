@@ -13,7 +13,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
   const cookieStore = await cookies();
   const isAdmin = !!cookieStore.get("admin_session");
 
-  // 1. 프로젝트 상세 데이터 가져오기
   const [rows]: any = await pool.query(`
     SELECT p.*, c.name as categoryName 
     FROM Project p 
@@ -24,7 +23,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
   const project = rows[0];
   if (!project) notFound();
 
-  // 2. 추천 프로젝트 (Carousel)
   const [recommendations]: any = await pool.query(`
     SELECT p.id, p.title, p.thumbnail, p.description,
     (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount
@@ -32,7 +30,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
     ORDER BY likeCount DESC, p.id DESC LIMIT 10
   `, [id]);
 
-  // 3. 이전글 / 다음글 로직
   const [newerRows]: any = await pool.query(
     "SELECT id, title FROM Project WHERE sortOrder < ? ORDER BY sortOrder DESC LIMIT 1",
     [project.sortOrder]
@@ -50,12 +47,14 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
       <ViewCounter id={id} /> 
       
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl shadow-2xl overflow-hidden">
-        <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
+        <header className="pt-14 pb-8 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
           <div className="max-w-5xl mx-auto px-8 md:px-10">
-            <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-block mb-6">
+            {/* 💡 수정됨: bg-zinc-100(더 연하게), tracking-normal(자간 제거) */}
+            <span className="bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-normal inline-block mb-4">
               {project.categoryName || "Uncategorized"}
             </span>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-8 tracking-tight">
+            {/* 💡 수정됨: 타이틀 크기 축소 (text-3xl md:text-5xl -> text-2xl md:text-4xl) */}
+            <h1 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-6 tracking-tight">
               {project.title}
             </h1>
             <div className="text-gray-400 text-xs font-medium uppercase tracking-widest">
@@ -71,8 +70,7 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
         <div className="max-w-5xl mx-auto leading-normal">
           <ContentView html={project.description} projectId={project.id} />
           
-          <div className="px-8 md:px-10 pb-24">
-            {/* 💡 수정됨: mt-24 -> mt-12로 여백 줄임, border-t(선) 삭제, pt-16 삭제 */}
+          <div className="px-8 md:px-10 pb-12">
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
               {newerPost ? (
                 <Link href={`/projects/${newerPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
@@ -97,7 +95,6 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
               )}
             </div>
 
-            {/* 💡 수정됨: mt-24 -> mt-12로 여백 줄임, border-t(선) 삭제, pt-20 삭제 */}
             {recommendations.length > 0 && (
               <section className="mt-12">
                 <ProjectCarousel recommendations={recommendations} />

@@ -109,12 +109,12 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // 💡 max-w-5xl (1024px)에 맞춰 절반 값인 512px로 수정
   const halfPopupWidth = '512px'; 
   const gap = '24px';
 
   return (
     <div className="fixed inset-0 z-[100] bg-white dark:bg-zinc-950 lg:bg-transparent transition-none">
+      {/* 모바일 상단바 */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-[170] h-14 flex items-center px-4 transition-all duration-300 ${
         isScrolled ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm' : 'bg-transparent'
       }`}>
@@ -132,7 +132,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
         className="absolute inset-0 bg-black/80 lg:backdrop-blur-sm overflow-y-scroll overscroll-contain"
         onClick={() => router.back()}
       >
-        <div className="flex justify-center items-start min-h-full py-0 lg:py-20 px-0 lg:px-4 pointer-events-none">
+        <div className="flex justify-center items-start min-h-full py-0 lg:py-8 px-0 lg:px-4 pointer-events-none">
           <div 
             className="relative w-full max-w-5xl pointer-events-auto bg-white dark:bg-zinc-950 lg:rounded-xl shadow-2xl min-h-screen lg:min-h-0 border-zinc-200 dark:border-zinc-800"
             onClick={(e) => e.stopPropagation()} 
@@ -142,16 +142,34 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
         </div>
       </div>
 
-      <div className="hidden lg:flex fixed top-10 z-[150] flex-col gap-4" style={{ left: `calc(50% + ${halfPopupWidth} + ${gap})` }}>
-        <button onClick={() => router.back()} className="text-white/40 hover:text-white p-2 self-start"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
-        <button onClick={handleLikeToggle} className={`p-4 rounded-full border shadow-lg transition-all ${isLiked ? 'bg-red-500 border-red-400 text-white' : 'bg-white/10 dark:bg-zinc-900/50 border-white/10 dark:border-zinc-800 text-white/60 hover:bg-white/20'}`}><svg width="24" height="24" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></button>
-        <button onClick={handleShareClick} className="p-4 bg-white/10 dark:bg-zinc-900/50 hover:bg-white/20 rounded-full border border-white/10 dark:border-zinc-800 shadow-lg text-white/60 hover:text-blue-400"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></button>
-        
+      {/* 1. 닫기 버튼: 우측 최상단 고정 */}
+      <div className="hidden lg:block fixed top-6 right-8 z-[200]">
+        <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* 2. 좋아요/공유 버튼: 팝업 시작점(py-8) 높이에 맞춰 상단 배치 */}
+      {/* 💡 top-8로 설정하여 팝업이 시작되는 지점과 나란히 맞췄습니다. */}
+      <div className="hidden lg:flex fixed top-8 z-[150] flex-col gap-3" style={{ left: `calc(50% + ${halfPopupWidth} + ${gap})` }}>
+        {/* 좋아요가 먼저 나오도록 순서 변경 */}
+        <button onClick={handleLikeToggle} className={`p-3 rounded-full border shadow-lg transition-all active:scale-75 ${isLiked ? 'bg-red-500 border-red-400 text-white' : 'bg-white/10 dark:bg-zinc-900/50 border-white/10 dark:border-zinc-800 text-white/60 hover:bg-white/20'}`}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <button onClick={handleShareClick} className="p-3 bg-white/10 dark:bg-zinc-900/50 hover:bg-white/20 rounded-full border border-white/10 dark:border-zinc-800 shadow-lg text-white/60 hover:text-blue-400 active:scale-90 transition-all">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+        </button>
+      </div>
+
+      {/* 3. 위로 올라가기 버튼: 하단 유지 */}
+      <div className="hidden lg:flex fixed bottom-10 z-[150]" style={{ left: `calc(50% + ${halfPopupWidth} + ${gap})` }}>
         <button 
           onClick={scrollToTop} 
-          className={`p-4 bg-white/10 dark:bg-zinc-900/50 hover:bg-white/20 rounded-full border border-white/10 dark:border-zinc-800 shadow-lg text-white/60 hover:text-white transition-all duration-300 ${isScrolled ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}
+          className="p-3 bg-white/10 dark:bg-zinc-900/50 hover:bg-white/20 rounded-full border border-white/10 dark:border-zinc-800 shadow-lg text-white/60 hover:text-white transition-all active:scale-90"
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 15l-6-6-6 6"/></svg>
         </button>
       </div>
     </div>
