@@ -6,7 +6,9 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Skeleton from "@/components/Skeleton";
-import { Heart, MessageCircle, Search } from "lucide-react";
+import { Heart, Eye, Search } from "lucide-react";
+// 💡 상세페이지에서 사용하는 Server Action 임포트
+import { toggleProjectLike, getLikeStatus } from '@/lib/actions';
 
 function LoadingOverlay() {
   return (
@@ -38,6 +40,31 @@ function ProjectListContent() {
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get("category") || "all";
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // 💡 [수정됨] 첫 클릭부터 즉시 반영되도록 로직 개선
+  const handleLike = async (e: React.MouseEvent, projectId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 1. 서버 액션 호출
+    const res = await toggleProjectLike(projectId);
+    
+    if (res && res.success) {
+      // 2. 서버가 알려준 action('liked' 또는 'unliked')을 기준으로 상태 업데이트
+      setProjects(prev => prev.map(p => {
+        if (p.id === projectId) {
+          const isNowLiked = res.action === 'liked';
+          return { 
+            ...p, 
+            // undefined 방지를 위해 기본값 0 설정 후 가감
+            likeCount: isNowLiked ? (p.likeCount || 0) + 1 : Math.max(0, (p.likeCount || 0) - 1),
+            isLiked: isNowLiked
+          };
+        }
+        return p;
+      }));
+    }
+  };
 
   const cleanDescription = (html: string) => {
     if (!html) return "";
@@ -118,12 +145,11 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    <main className="w-full px-[4%] md:px-[5%] pt-16 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+    <main className="w-full px-[4%] md:px-[5%] pt-12 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
-        {/* 💡 All Works 텍스트 크기 축소 (text-3xl -> text-2xl) */}
         <h1 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
           {categoryParam === "all" ? "All Works" : categoryParam}
         </h1>
@@ -153,7 +179,6 @@ function ProjectListContent() {
             key={`${project.id}-${index}`} 
             className="group block"
           >
-            {/* 💡 이미지 라운드값 축소 (rounded-2xl -> rounded-lg) */}
             <div className="relative aspect-[4/3] bg-zinc-100 dark:bg-zinc-900 rounded-lg overflow-hidden mb-5">
               {project.thumbnail && (
                 <Image 
@@ -164,34 +189,49 @@ function ProjectListContent() {
                   className="object-cover transition-transform duration-700 group-hover:scale-110" 
                 />
               )}
-              
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-6">
-                <span className="text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
-                  {project.categoryName || "Mixed"}
-                </span>
-                <span className="text-[11px] text-white/80 font-medium">
-                  {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ""}
-                </span>
+
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-5">
+                <div className="flex justify-end">
+                  <button 
+                    onClick={(e) => handleLike(e, project.id)}
+                    className="transition-all active:scale-90"
+                  >
+                    <Heart 
+                      size={20} 
+                      className={`transition-colors ${project.isLiked ? 'text-red-500 fill-red-500' : 'text-white fill-none'}`} 
+                    />
+                  </button>
+                </div>
+                
+                <div className="flex items-end justify-between">
+                  <span className="text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
+                    {project.categoryName || "Mixed"}
+                  </span>
+                  <span className="text-[11px] text-white/80 font-medium">
+                    {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ""}
+                  </span>
+                </div>
               </div>
             </div>
 
             <div className="flex items-center justify-between px-1">
               <div className="flex-1 pr-6">
-                {/* 💡 리스트 제목 크기 축소 (text-base -> text-sm) */}
                 <h2 className="text-sm font-extrabold text-zinc-900 dark:text-zinc-100 line-clamp-1 uppercase tracking-tighter">
                   {project.title}
                 </h2>
               </div>
               
-              {/* 💡 아이콘 및 카운트 색상 진하게 변경 (text-zinc-400 -> text-zinc-600) */}
               <div className="flex items-center gap-4 text-zinc-600 dark:text-zinc-400">
                 <div className="flex items-center gap-1.5">
-                  <Heart size={14} className="fill-current" />
+                  <Heart 
+                    size={14} 
+                    className={project.isLiked ? "text-red-500 fill-red-500" : ""} 
+                  />
                   <span className="text-xs font-bold">{project.likeCount || 0}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <MessageCircle size={14} className="fill-current" />
-                  <span className="text-xs font-bold">{project.commentCount || 0}</span>
+                  <Eye size={14} />
+                  <span className="text-xs font-bold">{project.views || 0}</span>
                 </div>
               </div>
             </div>

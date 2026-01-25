@@ -6,6 +6,7 @@ import CommentSection from "../../../projects/[id]/CommentSection";
 import ContentView from "../../../projects/[id]/ContentView";
 import ModalFrame from "@/components/ModalFrame";
 import ProjectCarousel from "@/components/ProjectCarousel";
+import ViewCounter from "@/components/ViewCounter"; // 💡 추가됨
 
 export default async function ProjectModalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -46,6 +47,9 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
 
   return (
     <ModalFrame>
+      {/* 💡 조회수 증가 로직 실행 (화면엔 안 보임) */}
+      <ViewCounter id={id} /> 
+      
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl shadow-2xl overflow-hidden">
         {/* 헤더 섹션: 카테고리와 날짜 복구 */}
         <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">

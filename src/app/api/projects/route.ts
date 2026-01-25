@@ -7,10 +7,8 @@ import { pool } from "@/lib/db";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    // 💡 status 추가
     const { title, content, categoryName, thumbnail, isVisible, showInAll, status } = body;
 
-    // 💡 임시저장(DRAFT)일 때는 제목만 있어도 저장 가능하도록 필수값 체크 완화 가능
     if (!title || !categoryName) {
       return NextResponse.json({ error: "제목과 카테고리는 필수입니다." }, { status: 400 });
     }
@@ -31,10 +29,8 @@ export async function POST(request: Request) {
 
     const finalVisibility = isVisible !== undefined ? (isVisible ? 1 : 0) : 1;
     const finalShowInAll = showInAll !== undefined ? (showInAll ? 1 : 0) : 1;
-    // 💡 status 기본값 설정 (전달되지 않으면 DRAFT)
     const finalStatus = status || 'DRAFT';
 
-    // 💡 INSERT 문에 status 컬럼 추가
     const [result]: any = await pool.query(
       "INSERT INTO Project (title, description, categoryId, thumbnail, sortOrder, isVisible, showInAll, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [title, content, categoryId, thumbnail, newOrder, finalVisibility, finalShowInAll, finalStatus]
@@ -54,7 +50,7 @@ export async function GET(request: Request) {
   const limit = parseInt(searchParams.get("limit") || "6"); 
   const category = searchParams.get("category");
   const search = searchParams.get("search");
-  const isAdmin = searchParams.get("isAdmin") === "true"; // 💡 관리자 여부 확인용 파라미터 추가 제안
+  const isAdmin = searchParams.get("isAdmin") === "true"; 
   const offset = (page - 1) * limit;
 
   try {
@@ -63,12 +59,15 @@ export async function GET(request: Request) {
         p.id, p.title, p.description, p.thumbnail, 
         p.isVisible, 
         p.showInAll, 
-        p.status,  /* 💡 status 선택 추가 */
+        p.status,
+        p.views,
         c.name as categoryName, 
         IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder,
         (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount,
-        (SELECT COUNT(*) FROM Comment WHERE projectId = p.id) as commentCount
+        (SELECT COUNT(*) FROM Comment WHERE projectId = p.id) as commentCount,
+        /* 💡 추가: 현재 사용자가 좋아요를 눌렀는지 여부 (비로그인 상태라도 상세페이지 로직과 동기화) */
+        EXISTS(SELECT 1 FROM ProjectLike WHERE projectId = p.id) as isLiked
       FROM Project p 
       LEFT JOIN Category c ON p.categoryId = c.id
       WHERE 1=1
@@ -76,7 +75,6 @@ export async function GET(request: Request) {
     
     const params: any[] = [];
 
-    // 💡 중요: 관리자가 아니라면 'PUBLISHED' 상태인 글만 가져옵니다.
     if (!isAdmin) {
       query += ` AND p.status = 'PUBLISHED'`;
     }
@@ -96,7 +94,13 @@ export async function GET(request: Request) {
 
     const [projects]: any = await pool.query(query, params);
     
-    return new NextResponse(JSON.stringify(projects), {
+    // 💡 MySQL의 EXISTS는 1 또는 0을 반환하므로 boolean으로 변환
+    const projectsWithLikeStatus = projects.map((p: any) => ({
+      ...p,
+      isLiked: !!p.isLiked
+    }));
+    
+    return new NextResponse(JSON.stringify(projectsWithLikeStatus), {
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
