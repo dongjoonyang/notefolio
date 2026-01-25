@@ -109,12 +109,12 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
     scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const halfPopupWidth = '512px'; 
+  const halfPopupWidth = '576px'; 
   const gap = '24px';
 
   return (
     <div className="fixed inset-0 z-[100] bg-white dark:bg-zinc-950 lg:bg-transparent transition-none">
-      {/* 모바일 상단바 */}
+      {/* 💡 모바일 닫기: 유지 */}
       <div className={`lg:hidden fixed top-0 left-0 right-0 z-[170] h-14 flex items-center px-4 transition-all duration-300 ${
         isScrolled ? 'bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md border-b border-zinc-200 dark:border-zinc-800 shadow-sm' : 'bg-transparent'
       }`}>
@@ -134,16 +134,18 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
       >
         <div className="flex justify-center items-start min-h-full py-0 lg:py-8 px-0 lg:px-4 pointer-events-none">
           <div 
-            className="relative w-full max-w-5xl pointer-events-auto bg-white dark:bg-zinc-950 lg:rounded-xl shadow-2xl min-h-screen lg:min-h-0 border-zinc-200 dark:border-zinc-800"
+            className="relative w-full max-w-6xl pointer-events-auto bg-white dark:bg-zinc-950 lg:rounded-xl shadow-2xl min-h-screen lg:min-h-0 border-zinc-200 dark:border-zinc-800 overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()} 
           >
-            {children}
+            <div className="w-full flex-1 min-w-0">
+              {children}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* 1. 닫기 버튼: 우측 최상단 고정 */}
-      <div className="hidden lg:block fixed top-6 right-8 z-[200]">
+      {/* 💡 수정됨: PC 닫기 버튼 숨김 (hidden lg:block -> hidden 으로 아예 제거) */}
+      <div className="hidden">
         <button onClick={() => router.back()} className="text-white/40 hover:text-white transition-colors">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M18 6L6 18M6 6l12 12"/>
@@ -151,10 +153,7 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
         </button>
       </div>
 
-      {/* 2. 좋아요/공유 버튼: 팝업 시작점(py-8) 높이에 맞춰 상단 배치 */}
-      {/* 💡 top-8로 설정하여 팝업이 시작되는 지점과 나란히 맞췄습니다. */}
       <div className="hidden lg:flex fixed top-8 z-[150] flex-col gap-3" style={{ left: `calc(50% + ${halfPopupWidth} + ${gap})` }}>
-        {/* 좋아요가 먼저 나오도록 순서 변경 */}
         <button onClick={handleLikeToggle} className={`p-3 rounded-full border shadow-lg transition-all active:scale-75 ${isLiked ? 'bg-red-500 border-red-400 text-white' : 'bg-white/10 dark:bg-zinc-900/50 border-white/10 dark:border-zinc-800 text-white/60 hover:bg-white/20'}`}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill={isLiked ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
         </button>
@@ -163,7 +162,6 @@ export default function ModalFrame({ children }: { children: React.ReactNode }) 
         </button>
       </div>
 
-      {/* 3. 위로 올라가기 버튼: 하단 유지 */}
       <div className="hidden lg:flex fixed bottom-10 z-[150]" style={{ left: `calc(50% + ${halfPopupWidth} + ${gap})` }}>
         <button 
           onClick={scrollToTop} 

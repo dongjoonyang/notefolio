@@ -15,8 +15,8 @@ export default function ProjectCarousel({ recommendations }: { recommendations: 
   const isNavigationActive = recommendations.length > 4;
 
   return (
-    /* 💡 수정됨: 요청하신 이미지와 동일한 배경색(#21282a) 적용 */
-    <div className="relative group mx-[-32px] md:mx-[-40px] px-8 md:px-10 py-16 bg-[#21282a] border-y border-[#2a3437]">
+    /* 💡 수정됨: 확장된 ModalFrame 여백(lg:px-14)에 맞춰 mx 마진과 px 패딩을 최적화하여 꽉 차게 확장 */
+    <div className="relative group mx-[-32px] md:mx-[-40px] lg:mx-[-56px] px-8 md:px-10 lg:px-14 py-16 bg-[#21282a] border-y border-[#2a3437]">
       
       {/* 💡 타이틀: 흰색 유지 */}
       <div className="mb-10">
@@ -36,6 +36,7 @@ export default function ProjectCarousel({ recommendations }: { recommendations: 
         }}
         breakpoints={{
           640: { slidesPerView: 2, freeMode: false },
+          /* 💡 수정됨: 팝업이 넓어졌으므로 큰 화면에서 4개가 적당한 간격으로 보이도록 유지 */
           1024: { slidesPerView: 4, freeMode: false },
         }}
         className="!static overflow-visible"

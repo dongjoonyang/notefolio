@@ -48,12 +48,11 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
       
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl shadow-2xl overflow-hidden">
         <header className="pt-14 pb-8 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
-          <div className="max-w-5xl mx-auto px-8 md:px-10">
-            {/* 💡 수정됨: bg-zinc-100(더 연하게), tracking-normal(자간 제거) */}
+          {/* 💡 max-w-5xl -> max-w-full로 변경 (ModalFrame의 6xl 너비를 그대로 사용) */}
+          <div className="max-w-full mx-auto px-8 md:px-10 lg:px-14">
             <span className="bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-normal inline-block mb-4">
               {project.categoryName || "Uncategorized"}
             </span>
-            {/* 💡 수정됨: 타이틀 크기 축소 (text-3xl md:text-5xl -> text-2xl md:text-4xl) */}
             <h1 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-6 tracking-tight">
               {project.title}
             </h1>
@@ -67,10 +66,11 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
           </div>
         </header>
 
-        <div className="max-w-5xl mx-auto leading-normal">
+        {/* 💡 max-w-5xl -> max-w-full로 변경하여 본문 내용도 확장 */}
+        <div className="max-w-full mx-auto leading-normal">
           <ContentView html={project.description} projectId={project.id} />
           
-          <div className="px-8 md:px-10 pb-12">
+          <div className="px-8 md:px-10 lg:px-14 pb-12">
             <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
               {newerPost ? (
                 <Link href={`/projects/${newerPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
