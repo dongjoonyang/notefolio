@@ -33,7 +33,7 @@ export default function ProjectActions({ projectId }: { projectId: number }) {
   };
 
   return (
-    <div className="flex items-center gap-4 py-10 border-t border-gray-100 dark:border-zinc-800 mt-10">
+    <div className="flex items-center gap-4 dark:border-zinc-800 mt-10">
       {/* 좋아요 버튼 */}
       <button
         onClick={handleLike}

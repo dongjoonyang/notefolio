@@ -126,11 +126,10 @@ export default function CommentSection({ projectId, isAdmin }: { projectId: stri
   };
 
   return (
-    <section className="mt-20 border-t border-gray-100 dark:border-zinc-800 pt-16">
+    <section className="border-gray-100 dark:border-zinc-800 pt-8">
       <div className="flex items-center gap-2 mb-8">
-        <MessageSquare className="text-zinc-900 dark:text-zinc-100" size={24} />
         <h2 className="text-2xl font-bold text-gray-900 dark:text-zinc-100">
-          Comments
+          댓글
           {totalCount > 0 && (
             <span className="text-zinc-500 ml-2 text-xl">({totalCount})</span>
           )}

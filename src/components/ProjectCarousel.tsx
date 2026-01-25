@@ -15,7 +15,16 @@ export default function ProjectCarousel({ recommendations }: { recommendations: 
   const isNavigationActive = recommendations.length > 4;
 
   return (
-    <div className="relative group px-1">
+    /* 💡 수정됨: 요청하신 이미지와 동일한 배경색(#21282a) 적용 */
+    <div className="relative group mx-[-32px] md:mx-[-40px] px-8 md:px-10 py-16 bg-[#21282a] border-y border-[#2a3437]">
+      
+      {/* 💡 타이틀: 흰색 유지 */}
+      <div className="mb-10">
+        <h3 className="text-[20px] font-black text-white uppercase tracking-tight">
+          이런 프로젝트는 어때요?
+        </h3>
+      </div>
+
       <Swiper
         modules={[Navigation, FreeMode]}
         spaceBetween={20}
@@ -33,7 +42,7 @@ export default function ProjectCarousel({ recommendations }: { recommendations: 
       >
         {recommendations.map((rec) => (
           <SwiperSlide key={rec.id} className="pb-4">
-            <Link href={`/projects/${rec.id}`} replace className="group/item relative block overflow-hidden rounded-2xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 aspect-[16/10]">
+            <Link href={`/projects/${rec.id}`} replace className="group/item relative block overflow-hidden rounded-2xl border border-white/10 bg-[#2a3437] aspect-[16/10]">
               {/* 메인 이미지 */}
               <Image
                 src={rec.thumbnail || "/placeholder.jpg"}
@@ -56,13 +65,11 @@ export default function ProjectCarousel({ recommendations }: { recommendations: 
       {/* 내비게이션 화살표 */}
       {isNavigationActive && (
         <>
-          {/* 왼쪽 화살표: 마우스 올렸을 때만 보임 */}
-          <button className="swiper-prev-btn absolute left-[-22px] top-[40%] -translate-y-1/2 z-20 w-11 h-11 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 disabled:!opacity-0 transition-all text-zinc-800 dark:text-zinc-200 hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-black">
+          <button className="swiper-prev-btn absolute left-4 top-[60%] -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white border border-white/20 rounded-full flex items-center justify-center shadow-2xl opacity-0 group-hover:opacity-100 disabled:!opacity-0 transition-all text-white hover:text-[#21282a]">
             <ChevronLeft size={22} />
           </button>
           
-          {/* 오른쪽 화살표: 처음부터 보임 (opacity-100) */}
-          <button className="swiper-next-btn absolute right-[-22px] top-[40%] -translate-y-1/2 z-20 w-11 h-11 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-full flex items-center justify-center shadow-xl opacity-100 group-hover:scale-105 disabled:!opacity-0 transition-all text-zinc-800 dark:text-zinc-200 hover:bg-zinc-900 hover:text-white dark:hover:bg-white dark:hover:text-black">
+          <button className="swiper-next-btn absolute right-4 top-[60%] -translate-y-1/2 z-20 w-11 h-11 bg-white/10 hover:bg-white border border-white/20 rounded-full flex items-center justify-center shadow-2xl opacity-100 group-hover:scale-105 disabled:!opacity-0 transition-all text-white hover:text-[#21282a]">
             <ChevronRight size={22} />
           </button>
         </>

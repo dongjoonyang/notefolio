@@ -6,7 +6,7 @@ import CommentSection from "../../../projects/[id]/CommentSection";
 import ContentView from "../../../projects/[id]/ContentView";
 import ModalFrame from "@/components/ModalFrame";
 import ProjectCarousel from "@/components/ProjectCarousel";
-import ViewCounter from "@/components/ViewCounter"; // 💡 추가됨
+import ViewCounter from "@/components/ViewCounter"; 
 
 export default async function ProjectModalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -47,17 +47,15 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
 
   return (
     <ModalFrame>
-      {/* 💡 조회수 증가 로직 실행 (화면엔 안 보임) */}
       <ViewCounter id={id} /> 
       
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl shadow-2xl overflow-hidden">
-        {/* 헤더 섹션: 카테고리와 날짜 복구 */}
         <header className="pt-20 pb-12 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
           <div className="max-w-5xl mx-auto px-8 md:px-10">
             <span className="bg-black dark:bg-zinc-100 text-white dark:text-zinc-950 px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest inline-block mb-6">
               {project.categoryName || "Uncategorized"}
             </span>
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-zinc-50 leading-[1.1] mb-8 tracking-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-8 tracking-tight">
               {project.title}
             </h1>
             <div className="text-gray-400 text-xs font-medium uppercase tracking-widest">
@@ -70,19 +68,16 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
           </div>
         </header>
 
-        {/* 메인 콘텐츠 영역 (이미지 풀 블리드 적용) */}
-        <div className="max-w-5xl mx-auto">
-          {/* ContentView 내부에 좋아요 버튼(inner-like-btn)이 포함되어 있다고 가정합니다. */}
+        <div className="max-w-5xl mx-auto leading-normal">
           <ContentView html={project.description} projectId={project.id} />
           
-          {/* 하단 섹션 여백 처리 (px-8 md:px-10) */}
           <div className="px-8 md:px-10 pb-24">
-            {/* 이전글/다음글 네비게이션 */}
-            <div className="mt-24 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-zinc-100 dark:border-zinc-800 pt-16">
+            {/* 💡 수정됨: mt-24 -> mt-12로 여백 줄임, border-t(선) 삭제, pt-16 삭제 */}
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
               {newerPost ? (
                 <Link href={`/projects/${newerPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-left">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">PREVIOUS PROJECT</span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">← {newerPost.title}</span>
+                  <span className="text-[14px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">이전 글</span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug">← {newerPost.title}</span>
                 </Link>
               ) : (
                 <div className="p-8 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-xl flex items-center justify-center opacity-40 text-xs text-zinc-400 font-medium tracking-widest uppercase">
@@ -92,8 +87,8 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
               
               {olderPost ? (
                 <Link href={`/projects/${olderPost.id}`} replace className="group p-8 border border-zinc-100 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all text-right">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">NEXT PROJECT</span>
-                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1">{olderPost.title} →</span>
+                  <span className="text-[14px] font-bold text-zinc-400 uppercase tracking-widest block mb-3">다음 글</span>
+                  <span className="text-lg font-bold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug">{olderPost.title} →</span>
                 </Link>
               ) : (
                 <div className="p-8 border border-dashed border-zinc-100 dark:border-zinc-800 rounded-xl flex items-center justify-center opacity-40 text-xs text-zinc-400 font-medium tracking-widest uppercase">
@@ -102,16 +97,14 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
               )}
             </div>
 
-            {/* 추천 캐러셀 섹션 */}
+            {/* 💡 수정됨: mt-24 -> mt-12로 여백 줄임, border-t(선) 삭제, pt-20 삭제 */}
             {recommendations.length > 0 && (
-              <section className="mt-24 pt-20 border-t border-zinc-100 dark:border-zinc-800">
-                <h3 className="text-[20px] font-black text-zinc-800 dark:text-zinc-100 uppercase mb-12">More Projects</h3>
+              <section className="mt-12">
                 <ProjectCarousel recommendations={recommendations} />
               </section>
             )}
 
-            {/* 댓글 섹션 */}
-            <div className="mt-24">
+            <div className="mt-12">
               <CommentSection projectId={id} isAdmin={isAdmin} />
             </div>
           </div>
