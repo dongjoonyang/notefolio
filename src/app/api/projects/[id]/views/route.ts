@@ -1,15 +1,15 @@
 import { pool } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest, // Request를 NextRequest로 변경 (표준 규격)
+  context: { params: Promise<{ id: string }> } // params를 Promise 타입으로 정의
 ) {
-  // Next.js 15 이상 대응을 위해 await params 사용
-  const { id } = await (params as any);
+  // 1. context.params를 await하여 id를 안전하게 추출합니다.
+  const { id } = await context.params;
 
   try {
-    // MySQL의 views 컬럼을 1 증가시키는 쿼리
+    // 2. MySQL의 views 컬럼을 1 증가시키는 쿼리 실행
     await pool.query(
       "UPDATE Project SET views = IFNULL(views, 0) + 1 WHERE id = ?",
       [id]
