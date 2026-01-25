@@ -15,7 +15,7 @@ export const metadata: Metadata = {
     siteName: 'Plug Log',
     images: [
       {
-        url: '/logo.svg',
+        url: 'https://www.pluglog.com/og.png',
         width: 1200,
         height: 630,
         alt: 'Plug Log 로고',
