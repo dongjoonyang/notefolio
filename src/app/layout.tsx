@@ -6,7 +6,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Plug Log 포트폴리오',
+  title: 'Plug Log',
   description: 'Plug Log 포트폴리오와 프로젝트를 확인해보세요.',
   openGraph: {
     title: 'Plug Log',
