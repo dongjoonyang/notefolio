@@ -6,6 +6,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MoreHorizontal, LayoutDashboard, Moon, Sun, Settings } from "lucide-react";
 import { useTheme } from "next-themes"; 
+import Image from "next/image";
 
 function NavbarContent({ categories, initialIsAdmin }: { categories: any[], initialIsAdmin: boolean }) {
   const pathname = usePathname();
@@ -77,7 +78,17 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
     <nav className="bg-white dark:bg-zinc-950 sticky top-0 z-[60] transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <div className="flex items-center gap-12 h-full">
-          <Link href="/" className="font-black text-xl tracking-tighter z-[70] text-zinc-900 dark:text-zinc-50">Plug Log Studio</Link>
+          {/* 💡 이 부분만 logo.svg로 교체되었습니다. */}
+          <Link href="/" className="z-[70] flex items-center">
+            <Image 
+              src="/logo.svg" 
+              alt="Logo" 
+              width={150} 
+              height={40} 
+              className="h-7 w-auto dark:invert transition-all"
+              priority
+            />
+          </Link>
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>
