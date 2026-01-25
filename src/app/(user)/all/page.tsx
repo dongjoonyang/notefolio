@@ -56,7 +56,6 @@ function ProjectListContent() {
           const isNowLiked = res.action === 'liked';
           return { 
             ...p, 
-            // undefined 방지를 위해 기본값 0 설정 후 가감
             likeCount: isNowLiked ? (p.likeCount || 0) + 1 : Math.max(0, (p.likeCount || 0) - 1),
             isLiked: isNowLiked
           };
@@ -207,7 +206,8 @@ function ProjectListContent() {
                   <span className="text-sm font-bold text-white uppercase tracking-tight line-clamp-1">
                     {project.categoryName || "Mixed"}
                   </span>
-                  <span className="text-[11px] text-white/80 font-medium">
+                  {/* 💡 날짜 텍스트 크기를 11px에서 13px로 키웠습니다 */}
+                  <span className="text-[13px] text-white/90 font-bold tracking-tight">
                     {project.createdAt ? new Date(project.createdAt).toLocaleDateString() : ""}
                   </span>
                 </div>
