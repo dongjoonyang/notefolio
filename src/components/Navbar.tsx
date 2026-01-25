@@ -89,7 +89,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
             />
           </Link>
           
-          <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full">
+          <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full ">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>
               All Works
               {pathname === '/all' && !currentCategory && (

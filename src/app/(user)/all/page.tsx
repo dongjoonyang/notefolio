@@ -118,7 +118,7 @@ function ProjectListContent() {
   }, [hasMore, loading, fetchProjects]);
 
   return (
-    <main className="w-full px-[4%] md:px-[5%] pt-20 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
+    <main className="w-full px-[4%] md:px-[5%] pt-16 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       
       {loading && <LoadingOverlay />}
 
