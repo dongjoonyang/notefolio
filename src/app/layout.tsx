@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Plug Log',
     description: 'Plug Log 포트폴리오와 프로젝트를 확인해보세요.',
-    images: ['/logo.svg'],
+    images: ['https://www.pluglog.com/og.png'],
   },
 }
 
