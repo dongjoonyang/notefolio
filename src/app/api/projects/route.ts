@@ -44,11 +44,14 @@ export async function POST(request: Request) {
   }
 }
 
-// --- 2. 불러오기(GET) 기능 (노출 필터링 강화) ---
+// --- 2. 불러오기(GET) 기능 (한 번에 8개씩 가져오도록 수정) ---
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "6"); 
+  
+  // 💡 [수정] 대형 PC 대응을 위해 기본 노출 개수를 6개에서 8개로 늘립니다.
+  const limit = parseInt(searchParams.get("limit") || "8"); 
+  
   const category = searchParams.get("category");
   const search = searchParams.get("search");
   const isAdmin = searchParams.get("isAdmin") === "true"; 
@@ -75,7 +78,6 @@ export async function GET(request: Request) {
       WHERE 1=1
     `;
     
-    // 💡 관리자가 아닐 때, 노출 설정된 것만 쿼리 단계에서 필터링 (빈 공간 방지 핵심)
     if (!isAdmin) {
       query += ` AND p.status = 'PUBLISHED'`;
       query += ` AND p.isVisible = 1`; 
@@ -112,6 +114,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
+    console.error("SQL Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

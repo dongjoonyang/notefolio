@@ -9,6 +9,7 @@ import Skeleton from "@/components/Skeleton";
 import { Heart, Eye, Search } from "lucide-react";
 import { toggleProjectLike } from '@/lib/actions';
 
+// 💡 쉬머(Shimmer) 애니메이션이 적용된 스켈레톤
 function ProjectSkeleton() {
   return (
     <div className="space-y-5">
@@ -41,11 +42,9 @@ function ProjectListContent() {
   const categoryParam = searchParams.get("category") || "all";
   const observerTarget = useRef<HTMLDivElement>(null);
   
-  // 💡 [핵심] 중복 호출을 물리적으로 차단하는 플래그
   const isFetching = useRef(false);
 
   const fetchProjects = useCallback(async (isReset = false) => {
-    // 💡 이미 데이터를 가져오는 중이면 절대로 다시 실행하지 않음
     if (isFetching.current) return;
     if (!isReset && !hasMore) return;
 
@@ -56,8 +55,9 @@ function ProjectListContent() {
     if (isReset) setProjects([]); 
 
     try {
+      // 💡 [수정] limit을 6에서 8로 변경하여 PC 화면 대응
       const response = await fetch(
-        `/api/projects?page=${targetPage}&limit=6&search=${activeSearch}&category=${categoryParam}&v=${Date.now()}`
+        `/api/projects?page=${targetPage}&limit=8&search=${activeSearch}&category=${categoryParam}&v=${Date.now()}`
       );
 
       if (!response.ok) {
@@ -78,24 +78,22 @@ function ProjectListContent() {
         });
         setPage(prev => prev + 1);
       }
-      // 데이터가 limit(6)보다 적으면 더 이상 데이터가 없는 것으로 판단
-      setHasMore(newData.length === 6);
+      // 💡 [수정] 데이터 유무 판단 기준도 8로 변경
+      setHasMore(newData.length === 8);
     } catch (e) {
       setHasMore(false);
     } finally {
       setLoading(false);
-      isFetching.current = false; // 💡 요청이 완전히 끝난 후 잠금 해제
+      isFetching.current = false;
     }
   }, [page, activeSearch, categoryParam, hasMore]);
 
-  // 1. 카테고리/검색 변경 시 초기화 로드
   useEffect(() => {
     setHasMore(true);
     setPage(1);
     fetchProjects(true);
-  }, [categoryParam, activeSearch]); // fetchProjects를 제외하여 무한 루프 방지
+  }, [categoryParam, activeSearch]);
 
-  // 2. 무한 스크롤 감지
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -121,7 +119,7 @@ function ProjectListContent() {
   };
 
   return (
-    <main className="w-full px-[4%] md:px-[5%] pt-12 pb-10 min-h-screen bg-white dark:bg-zinc-950">
+    <main className="w-full px-[4%] md:px-[5%] pt-12 pb-10 min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300">
       <style jsx global>{`@keyframes shimmer { 100% { transform: translateX(100%); } }`}</style>
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
@@ -143,9 +141,11 @@ function ProjectListContent() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-12">
+      {/* 💡 [수정] xl(노트북)에서 3열(6개), 2xl(PC)에서 4열(8개)이 나오도록 그리드 클래스 수정 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-x-6 gap-y-12">
         {projects.length === 0 && loading ? (
-          [...Array(6)].map((_, i) => <ProjectSkeleton key={i} />)
+          /* 💡 [수정] 스켈레톤도 8개로 증설 */
+          [...Array(8)].map((_, i) => <ProjectSkeleton key={i} />)
         ) : (
           <>
             {projects.map((project, index) => (
