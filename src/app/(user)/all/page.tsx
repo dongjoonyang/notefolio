@@ -121,6 +121,10 @@ function ProjectListContent() {
   }, [filteredProjects.length, hasMore, loading, fetchProjects, projects.length]);
 
   useEffect(() => {
+    setProjects([]); 
+    setPage(1);
+    setHasMore(true);
+    
     fetchProjects(true);
   }, [categoryParam, activeSearch]);
 
