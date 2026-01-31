@@ -44,7 +44,7 @@ export async function POST(request: Request) {
   }
 }
 
-// --- 2. 불러오기(GET) 기능 (파라미터 순서 및 IP 식별 수정) ---
+// --- 2. 불러오기(GET) 기능 (노출 필터링 강화) ---
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -54,35 +54,36 @@ export async function GET(request: Request) {
   const isAdmin = searchParams.get("isAdmin") === "true"; 
   const offset = (page - 1) * limit;
 
-  // 💡 상세페이지 actions.ts와 동일한 방식으로 IP 추출
   const headerList = await headers();
   const userIp = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";
 
   try {
-    // 💡 중요: EXISTS 내부의 ?가 쿼리상 가장 먼저 나오므로 params[0]에 userIp 배치
     let params: any[] = [userIp];
 
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
-        p.isVisible, 
-        p.showInAll, 
-        p.status,
-        p.views,
+        p.isVisible, p.showInAll, p.status, p.views,
         c.name as categoryName, 
         IFNULL(c.isVisible, 1) as categoryIsVisible,
         p.createdAt, p.sortOrder,
         (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount,
         (SELECT COUNT(*) FROM Comment WHERE projectId = p.id) as commentCount,
-        /* 💡 수정: ipAddress 컬럼을 현재 유저의 IP와 대조 (나의 좋아요만 빨간색으로 표시) */
         EXISTS(SELECT 1 FROM ProjectLike WHERE projectId = p.id AND ipAddress = ?) as isLiked
       FROM Project p 
       LEFT JOIN Category c ON p.categoryId = c.id
       WHERE 1=1
     `;
     
+    // 💡 관리자가 아닐 때, 노출 설정된 것만 쿼리 단계에서 필터링 (빈 공간 방지 핵심)
     if (!isAdmin) {
       query += ` AND p.status = 'PUBLISHED'`;
+      query += ` AND p.isVisible = 1`; 
+      query += ` AND IFNULL(c.isVisible, 1) = 1`; 
+      
+      if (!category || category === "all") {
+        query += ` AND p.showInAll = 1`;
+      }
     }
 
     if (category && category !== "all") {
@@ -100,12 +101,10 @@ export async function GET(request: Request) {
 
     const [projects]: any = await pool.query(query, params);
     
-    const projectsWithLikeStatus = projects.map((p: any) => ({
+    return new NextResponse(JSON.stringify(projects.map((p: any) => ({
       ...p,
       isLiked: !!p.isLiked
-    }));
-    
-    return new NextResponse(JSON.stringify(projectsWithLikeStatus), {
+    }))), {
       status: 200,
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate',
@@ -113,7 +112,6 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
-    console.error("SQL Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
