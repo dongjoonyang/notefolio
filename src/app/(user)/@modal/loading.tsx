@@ -8,7 +8,6 @@ export default function Loading() {
       {/* 중앙 로딩 스피너 */}
       <div className="relative z-[110] flex flex-col items-center gap-4">
         <div className="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin" />
-        <p className="text-white/60 text-sm font-medium tracking-widest uppercase">Loading Project</p>
       </div>
     </div>
   );

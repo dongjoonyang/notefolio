@@ -46,9 +46,32 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
     <ModalFrame>
       <ViewCounter id={id} /> 
       
+      {/* 💡 BRAND RIBBON POINT: 팝업 우측 상단 브랜드 포인트 */}
+<div className="absolute top-0 right-10 z-[50] pointer-events-none hidden lg:block">
+  {/* filter: drop-shadow를 부모에 주면 잘린 리본 모양대로 그림자가 생깁니다 */}
+  <div className="relative w-12 h-16 flex items-start justify-center pt-3 filter drop-shadow-md">
+    
+    {/* 1. 배경 리본 (배경만 clip-path 적용) */}
+    <div 
+      className="absolute inset-0 bg-zinc-900 dark:bg-zinc-100"
+      style={{
+        clipPath: 'polygon(0% 0%, 100% 0%, 100% 100%, 50% 85%, 0% 100%)'
+      }}
+    />
+
+    {/* 2. 브랜드 아이콘 (z-index를 확실히 높이고 mb-3 대신 pt-3 정렬 활용) */}
+    <img 
+      src="https://www.pluglog.com/apple-touch-icon.png" 
+      alt="Brand Icon" 
+      className="relative z-[60] w-8 h-8 object-contain invert dark:invert-0" 
+      style={{ display: 'block' }} // 가끔 렌더링 누락 방지
+    />
+    
+  </div>
+</div>
+
       <article className="w-full bg-white dark:bg-zinc-950 sm:rounded-xl shadow-2xl overflow-hidden">
         <header className="pt-14 pb-8 border-b border-gray-50 dark:border-zinc-800 bg-gray-50/30 dark:bg-zinc-900/30">
-          {/* 💡 max-w-5xl -> max-w-full로 변경 (ModalFrame의 6xl 너비를 그대로 사용) */}
           <div className="max-w-full mx-auto px-8 md:px-10 lg:px-14">
             <span className="bg-zinc-100 dark:bg-zinc-800/50 text-zinc-500 dark:text-zinc-400 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-normal inline-block mb-4">
               {project.categoryName || "Uncategorized"}
@@ -56,17 +79,22 @@ export default async function ProjectModalPage({ params }: { params: Promise<{ i
             <h1 className="text-2xl md:text-4xl font-black text-gray-900 dark:text-zinc-50 leading-tight mb-6 tracking-tight">
               {project.title}
             </h1>
-            <div className="text-gray-400 text-xs font-medium uppercase tracking-widest">
-              Published on {new Date(project.createdAt).toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-              })}
+            
+            <div className="flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-widest">
+              <div>
+                발행일 {new Date(project.createdAt).toLocaleDateString('ko-KR', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </div>
+              <div>
+                © All Rights Reserved
+              </div>
             </div>
           </div>
         </header>
 
-        {/* 💡 max-w-5xl -> max-w-full로 변경하여 본문 내용도 확장 */}
         <div className="max-w-full mx-auto leading-normal">
           <ContentView html={project.description} projectId={project.id} />
           
