@@ -2,8 +2,9 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { headers } from "next/headers";
 
-// --- 1. 저장(POST) 기능 ---
+// --- 1. 저장(POST) 기능 (기존 유지) ---
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
   }
 }
 
-// --- 2. 불러오기(GET) 기능 ---
+// --- 2. 불러오기(GET) 기능 (파라미터 순서 및 IP 식별 수정) ---
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
@@ -53,7 +54,14 @@ export async function GET(request: Request) {
   const isAdmin = searchParams.get("isAdmin") === "true"; 
   const offset = (page - 1) * limit;
 
+  // 💡 상세페이지 actions.ts와 동일한 방식으로 IP 추출
+  const headerList = await headers();
+  const userIp = headerList.get("x-forwarded-for")?.split(",")[0] || "unknown";
+
   try {
+    // 💡 중요: EXISTS 내부의 ?가 쿼리상 가장 먼저 나오므로 params[0]에 userIp 배치
+    let params: any[] = [userIp];
+
     let query = `
       SELECT 
         p.id, p.title, p.description, p.thumbnail, 
@@ -66,15 +74,13 @@ export async function GET(request: Request) {
         p.createdAt, p.sortOrder,
         (SELECT COUNT(*) FROM ProjectLike WHERE projectId = p.id) as likeCount,
         (SELECT COUNT(*) FROM Comment WHERE projectId = p.id) as commentCount,
-        /* 💡 추가: 현재 사용자가 좋아요를 눌렀는지 여부 (비로그인 상태라도 상세페이지 로직과 동기화) */
-        EXISTS(SELECT 1 FROM ProjectLike WHERE projectId = p.id) as isLiked
+        /* 💡 수정: ipAddress 컬럼을 현재 유저의 IP와 대조 (나의 좋아요만 빨간색으로 표시) */
+        EXISTS(SELECT 1 FROM ProjectLike WHERE projectId = p.id AND ipAddress = ?) as isLiked
       FROM Project p 
       LEFT JOIN Category c ON p.categoryId = c.id
       WHERE 1=1
     `;
     
-    const params: any[] = [];
-
     if (!isAdmin) {
       query += ` AND p.status = 'PUBLISHED'`;
     }
@@ -94,7 +100,6 @@ export async function GET(request: Request) {
 
     const [projects]: any = await pool.query(query, params);
     
-    // 💡 MySQL의 EXISTS는 1 또는 0을 반환하므로 boolean으로 변환
     const projectsWithLikeStatus = projects.map((p: any) => ({
       ...p,
       isLiked: !!p.isLiked
@@ -108,6 +113,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error: any) {
+    console.error("SQL Error:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
