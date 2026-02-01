@@ -91,7 +91,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
           
           <div className="hidden lg:flex items-center gap-8 text-sm font-medium h-full ">
             <Link href="/all" className={getLinkStyle(pathname === '/all' && !currentCategory)}>
-              All Works
+              전체 프로젝트
               {pathname === '/all' && !currentCategory && (
                 <motion.div 
                   layoutId="activeTab"
@@ -195,7 +195,7 @@ function NavbarContent({ categories, initialIsAdmin }: { categories: any[], init
             className="fixed inset-0 bg-white dark:bg-zinc-950 z-[65] lg:hidden flex flex-col p-10 pt-24"
           >
             <div className="flex flex-col gap-2">
-              <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>All Works</Link>
+              <Link href="/all" className={getMobileLinkStyle(pathname === '/all' && !currentCategory)}>전체 프로젝트</Link>
               {categories
                 ?.filter((cat: any) => Number(cat.isVisible) !== 0)
                 .map((cat: any) => (

@@ -124,7 +124,7 @@ function ProjectListContent() {
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-16">
         <h1 className="text-2xl font-black uppercase tracking-tighter text-gray-900 dark:text-zinc-50">
-          {categoryParam === "all" ? "All Works" : categoryParam}
+          {categoryParam === "all" ? "전체 프로젝트" : categoryParam}
         </h1>
         <div className="relative w-full md:w-64">
           <div className="relative flex items-center">
