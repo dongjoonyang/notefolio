@@ -167,7 +167,7 @@ export default function AdminProjectList({ projects: initialProjects }: { projec
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-[8px] font-black text-slate-400 uppercase">All Works</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase">전체 프로젝트</span>
                   <ProjectShowInAllToggle 
                     id={project.id} 
                     initialShowInAll={project.showInAll} 
